@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -21,5 +22,24 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+export const apiService = {
+  // Transactions
+  getTransactions: () => api.get('/transactions'),
+  createTransaction: (data) => api.post('/transactions', data),
+  
+  // Budgets
+  getBudgets: () => api.get('/budgets'),
+  createBudget: (data) => api.post('/budgets', data),
+  
+  // Goals
+  getGoals: () => api.get('/goals'),
+  createGoal: (data) => api.post('/goals', data),
+  
+  // Analytics
+  getSummary: () => api.get('/analytics/summary'),
+  getCategories: () => api.get('/analytics/categories'),
+  getTrends: () => api.get('/analytics/trends'),
+};
 
 export default api;

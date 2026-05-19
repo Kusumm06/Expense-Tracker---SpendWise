@@ -1,7 +1,10 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from './routes/authRoutes.js';
-import expenseRoutes from './routes/expenseRoutes.js';
+import transactionRoutes from './routes/transactionRoutes.js';
+import budgetRoutes from './routes/budgetRoutes.js';
+import goalRoutes from './routes/goalRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
 
 const app = express();
@@ -16,11 +19,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/expenses', expenseRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
-    res.send("Expense Tracker API is running...");
+    res.send("SpendWise API is running...");
 });
 
 // Error handling middleware (should be last)

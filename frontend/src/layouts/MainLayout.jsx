@@ -1,139 +1,144 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  LayoutDashboard, 
-  Receipt, 
-  PlusCircle, 
-  UserCircle, 
-  LogOut, 
-  Menu, 
-  Bell 
+import { motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  ArrowRightLeft,
+  Tags,
+  PieChart,
+  Target,
+  FileText,
+  LineChart,
+  Calendar,
+  Settings,
+  Search,
+  Bell,
+  LogOut
 } from 'lucide-react';
-import clsx from 'clsx';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Expenses', path: '/expenses', icon: Receipt },
-    { name: 'Add Expense', path: '/add-expense', icon: PlusCircle },
-    { name: 'Profile', path: '/profile', icon: UserCircle },
+  const menuItems = [
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Transactions', icon: ArrowRightLeft, path: '/transactions' },
+    { name: 'Categories', icon: Tags, path: '/categories' },
+    { name: 'Budgets', icon: PieChart, path: '/budgets' },
+    { name: 'Goals', icon: Target, path: '/goals' },
+    { name: 'Reports', icon: FileText, path: '/reports' },
+    { name: 'Insights', icon: LineChart, path: '/insights' },
+    { name: 'Calendar', icon: Calendar, path: '/calendar' },
+    { name: 'Settings', icon: Settings, path: '/settings' },
   ];
 
   return (
-    <div className="min-h-screen bg-background-main flex">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-20 bg-primary-dark/40 lg:hidden backdrop-blur-sm transition-opacity"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="flex w-screen h-screen overflow-hidden font-sans" style={{ background: 'linear-gradient(135deg, #F5F8F3 0%, #EEF3EB 100%)' }}>
 
-      {/* Sidebar */}
-      <aside className={clsx(
-        "fixed inset-y-0 left-0 z-30 w-64 bg-primary-dark text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 shadow-xl lg:shadow-none",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center px-6 h-20 border-b border-white/10">
-          <div className="flex items-center gap-3 w-full">
-            <div className="w-9 h-9 bg-primary-accent rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">E</span>
-            </div>
-            <span className="text-xl font-bold tracking-wide">ExpenseHQ</span>
+      {/* SIDEBAR */}
+      <div className="w-[280px] h-full bg-[rgba(255,255,255,0.75)] backdrop-blur-[18px] border-r border-[rgba(0,0,0,0.04)] flex flex-col p-[28px] shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+
+        {/* Branding */}
+        <div className="flex items-center gap-3 mb-[40px]">
+          <div className="w-[42px] h-[42px] bg-[#184734] rounded-full flex items-center justify-center shadow-md">
+            <PieChart className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="font-poppins font-bold text-[24px] text-[#184734] leading-none">SpendWise</h1>
+            <p className="text-[12px] text-[#6E7A71] mt-0.5 font-medium tracking-wide">Smart tracking. Better living.</p>
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 h-[calc(100vh-5rem)] overflow-y-auto">
-          <nav className="flex-1 px-4 py-6 space-y-1.5">
-            {navItems.map((item) => (
-              <NavLink
+        {/* Menu Items */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-2">
+          {menuItems.map((item) => {
+            const isActive = location.pathname.includes(item.path);
+            return (
+              <Link
                 key={item.name}
                 to={item.path}
-                className={({ isActive }) => clsx(
-                  "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group",
-                  isActive 
-                    ? "bg-primary-accent text-white shadow-md shadow-primary-accent/20" 
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                )}
-                onClick={() => setSidebarOpen(false)}
+                className="block relative group"
               >
-                <item.icon className={clsx(
-                  "mr-3 h-5 w-5 transition-colors",
-                  // Remove group-hover logic since active state text is white anyway
-                )} />
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="p-4 border-t border-white/10">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-400 rounded-xl transition-colors hover:bg-danger/10 hover:text-danger group"
-            >
-              <LogOut className="mr-3 h-5 w-5 group-hover:text-danger transition-colors" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Navbar */}
-        <header className="bg-card-bg shadow-sm border-b border-border-color z-10">
-          <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
-            <button
-              className="p-2 -ml-2 mr-2 text-text-secondary hover:text-text-primary hover:bg-slate-100 rounded-xl lg:hidden transition-colors"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-
-            <div className="flex-1 flex justify-between items-center lg:justify-end gap-4">
-              <div className="hidden sm:block"></div>
-
-              <div className="flex items-center gap-5 pl-4 sm:pl-6 ml-4 sm:ml-6 lg:border-l lg:border-border-color">
-                <button className="text-text-secondary hover:text-primary-accent transition-colors relative p-2 hover:bg-slate-50 rounded-full">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-danger ring-2 ring-white" />
-                </button>
-                
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary-accent/10 flex items-center justify-center text-primary-accent font-bold text-lg border border-primary-accent/20 overflow-hidden">
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      user?.name?.charAt(0).toUpperCase() || 'U'
-                    )}
-                  </div>
-                  <div className="hidden sm:block">
-                    <p className="text-sm font-semibold text-text-primary">{user?.name}</p>
-                    <p className="text-xs text-text-secondary truncate max-w-[150px]">{user?.email}</p>
-                  </div>
+                <div className={`h-[58px] rounded-[16px] px-[18px] flex items-center gap-[14px] transition-all duration-300 ${isActive ? 'bg-[#EEF5ED] shadow-sm' : 'hover:bg-[#EEF5ED]/50 hover:scale-[1.02]'}`}>
+                  <item.icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-[#184734]' : 'text-[#6E7A71] group-hover:text-[#184734]'}`} />
+                  <span className={`text-[16px] font-medium transition-colors duration-300 ${isActive ? 'text-[#184734]' : 'text-[#6E7A71] group-hover:text-[#184734]'}`}>
+                    {item.name}
+                  </span>
                 </div>
-              </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Motivation Card */}
+        <div className="mt-6 w-full h-[220px] rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #EAF2E7 0%, #DCE9DC 100%)' }}>
+          <div className="relative z-10">
+            <Target className="w-8 h-8 text-[#184734] mb-3 opacity-80" />
+            <h3 className="font-semibold text-[#184734] text-[18px] leading-tight">Goal progress</h3>
+            <p className="text-[14px] text-[#215C45] mt-1 font-medium">You're doing great!</p>
+          </div>
+          <button className="relative z-10 w-full h-[46px] bg-white/60 hover:bg-white/90 text-[#184734] font-medium rounded-[14px] transition-colors shadow-sm backdrop-blur-sm">
+            View goals
+          </button>
+          {/* Abstract decoration */}
+          <div className="absolute top-[-20%] right-[-20%] w-[150px] h-[150px] bg-white/20 rounded-full blur-2xl"></div>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="mt-6 flex items-center justify-center gap-3 w-full h-[54px] rounded-[16px] text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors font-medium"
+        >
+          <LogOut className="w-5 h-5" />
+          Log out
+        </button>
+
+      </div>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+
+        {/* TOP HEADER */}
+        <header className="h-[90px] px-[40px] flex items-center justify-between shrink-0 relative z-10">
+          <div>
+            <h2 className="font-poppins font-bold text-[36px] text-[#1D4735] tracking-tight">Good morning, {user?.name?.split(' ')[0] || 'User'}! 👋</h2>
+            <p className="font-inter text-[16px] text-[#6E7A71] mt-0.5">Here's what's happening with your finances today.</p>
+          </div>
+
+          <div className="flex items-center gap-8">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-[18px] top-1/2 -translate-y-1/2 w-5 h-5 text-[#8DA57B]" />
+              <input
+                type="text"
+                placeholder="Search transactions, categories..."
+                className="w-[420px] h-[56px] bg-[rgba(255,255,255,0.85)] backdrop-blur-md border border-[rgba(255,255,255,0.5)] rounded-[18px] pl-[52px] pr-4 text-[16px] text-[#1F3F31] placeholder:text-[#8DA57B] focus:outline-none focus:ring-2 focus:ring-[#8DA57B]/30 focus:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] transition-all"
+              />
             </div>
+
+            {/* Notification */}
+            <button className="w-[56px] h-[56px] rounded-[18px] bg-[rgba(255,255,255,0.85)] backdrop-blur-md flex items-center justify-center text-[#1D4735] hover:bg-white hover:shadow-md transition-all relative">
+              <Bell className="w-6 h-6" />
+              <span className="absolute top-[14px] right-[14px] w-2.5 h-2.5 bg-[#EF4444] rounded-full border-2 border-white"></span>
+            </button>
+
+            {/* Profile Dropdown */}
+            <button className="flex items-center gap-3 bg-[rgba(255,255,255,0.85)] backdrop-blur-md h-[56px] px-4 rounded-[18px] hover:bg-white hover:shadow-md transition-all">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#184734] to-[#8DA57B] flex items-center justify-center text-white font-semibold shadow-sm">
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              <span className="font-medium text-[#1D4735] mr-1">{user?.name || 'User'}</span>
+            </button>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-background-main">
-          <div className="max-w-7xl mx-auto animate-fade-in">
-            <Outlet />
-          </div>
-        </main>
+        {/* MAIN OUTLET */}
+        <div className="flex-1 overflow-hidden relative">
+          <Outlet />
+        </div>
+
       </div>
+
     </div>
   );
 };

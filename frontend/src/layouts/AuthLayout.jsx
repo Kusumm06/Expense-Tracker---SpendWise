@@ -1,15 +1,17 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Loader from '../components/common/Loader';
 import { motion } from 'framer-motion';
-import { PieChart, ShieldCheck, Target } from 'lucide-react';
+import { PieChart, LineChart, Calendar, Leaf } from 'lucide-react';
 
 const AuthLayout = () => {
   const { token, loading } = useAuth();
+  const location = useLocation();
+  const isLogin = location.pathname === '/login';
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-light">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <Loader size="lg" color="primary" />
       </div>
     );
@@ -20,146 +22,142 @@ const AuthLayout = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-[#FAFCF9] overflow-hidden font-sans">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} // smooth cinematic ease
-        className="w-[92%] h-[92vh] bg-bg-light rounded-[36px] shadow-soft flex overflow-hidden relative"
-      >
-        {/* LEFT SECTION (52%) */}
-        <div 
-          className="hidden lg:flex flex-col w-[52%] relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #F5F8F2 0%, #EAF1E7 40%, #E4ECE1 100%)' }}
-        >
-          {/* Ambient Glowing Orbs */}
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.4, 0.6, 0.4]
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#8BA97F] rounded-full blur-[120px] mix-blend-multiply opacity-40 pointer-events-none"
-          />
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#FFFBF0] rounded-full blur-[140px] opacity-60 pointer-events-none"
-          />
-          {/* Warm Sunlight Glow */}
-          <div className="absolute top-[-5%] right-[-5%] w-[400px] h-[400px] bg-[#FDF5E6] rounded-full blur-[100px] opacity-70 pointer-events-none z-10 mix-blend-overlay"></div>
+    <div className="w-full min-h-screen flex items-center justify-center p-6 bg-[#F8FAFC] font-sans">
+      <div className="w-full max-w-[1440px] h-[90vh] min-h-[800px] flex rounded-[32px] overflow-hidden bg-white shadow-[0_20px_60px_rgba(0,0,0,0.05)] relative">
+        
+        {/* LEFT SECTION (55%) */}
+        <div className="hidden lg:flex flex-col w-[55%] h-full relative overflow-hidden shrink-0">
           
-          <div className="relative z-20 p-[70px] flex flex-col h-full">
-            {/* Logo */}
-            <motion.div 
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-              className="flex items-center gap-3 mb-[10vh]"
-            >
-              <div className="w-[42px] h-[42px] bg-[#1F5A45] rounded-full flex items-center justify-center">
-                <PieChart className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="font-poppins font-bold text-[32px] text-[#183B2D] leading-none">SpendWise</h1>
-                <p className="text-[14px] text-[#617065] mt-1 font-medium tracking-wide">Smart tracking. Better living.</p>
-              </div>
-            </motion.div>
-
-            {/* Main Heading */}
-            <motion.div
-              initial={{ x: -30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
-              className="max-w-[650px] mb-10"
-            >
-              <h2 
-                className="font-playfair text-[72px] font-semibold text-[#183B2D] tracking-[-2px]"
-                style={{ lineHeight: 1.08 }}
-              >
-                Welcome back.<br />
-                Continue your journey<br />
-                towards <span className="text-[#8BA97F] italic" style={{ textShadow: '0 0 20px rgba(139,169,127,0.4)' }}>clarity.</span>
-              </h2>
-              <p className="font-inter text-[19px] font-normal text-[#617065] w-[480px] mt-6 leading-[1.7]">
-                Log in to manage expenses, track savings, and stay financially mindful.
-              </p>
-            </motion.div>
-
-            {/* Quote Card */}
-            <motion.div 
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 1, type: "spring", bounce: 0.3 }}
-              className="absolute bottom-[70px] left-[70px] w-[360px] h-[110px] bg-[rgba(18,63,45,0.88)] backdrop-blur-[18px] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-6 flex items-center shadow-2xl z-30 overflow-hidden group"
-            >
-              {/* Glass reflection */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[rgba(255,255,255,0.05)] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none"></div>
-              <p className="text-white text-[22px] font-medium leading-[1.4] font-playfair italic">
-                "Small steps today lead to financial freedom tomorrow."
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Cinematic Illustration Background */}
-          <div className="absolute bottom-[-5%] right-[-10%] w-[900px] h-[900px] opacity-50 pointer-events-none mix-blend-multiply z-0">
+          {/* Cinematic Background Image */}
+          <div className="absolute inset-0 z-0">
             <img 
-              src="/illustration.png" 
-              alt="Nature growth illustration" 
-              className="w-full h-full object-cover rounded-full filter blur-[4px]" 
-              style={{ maskImage: 'radial-gradient(black, transparent 60%)', WebkitMaskImage: 'radial-gradient(black, transparent 60%)' }} 
+              src="/auth_hero.jpg" 
+              alt="Premium Onboarding" 
+              className="w-full h-full object-cover object-right"
+              style={{
+                filter: 'brightness(98%) saturate(105%) contrast(100%)'
+              }}
             />
           </div>
-          
-          <motion.div 
-            animate={{ y: [-5, 5, -5] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-0 left-[20%] w-[620px] z-10 pointer-events-none"
-          >
-            <img 
-              src="/illustration.png" 
-              alt="Traveler" 
-              className="w-full h-auto object-contain" 
-              style={{ 
-                maskImage: 'linear-gradient(to top, black 50%, transparent 100%), radial-gradient(circle at center, black 60%, transparent 90%)', 
-                WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 80%)',
-                filter: 'drop-shadow(0 30px 40px rgba(0,0,0,0.15))'
-              }} 
-            />
+
+          {/* White Gradient Overlay for Readability (Fades Left to Right) */}
+          <div 
+            className="absolute inset-0 z-10"
+            style={{ 
+              background: 'linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 40%, rgba(255,255,255,0.8) 60%, rgba(255,255,255,0) 100%)' 
+            }}
+          ></div>
+
+          {/* Left Panel Content */}
+          <div className="relative z-20 p-[64px] flex flex-col h-full w-full">
             
-            {/* Animated Particles */}
-            {[...Array(5)].map((_, i) => (
+            {/* Top Logo Area */}
+            <motion.div 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="flex items-center gap-[12px]"
+            >
+              <div className="w-[36px] h-[36px] bg-[#184734] rounded-full flex items-center justify-center">
+                <PieChart className="w-[18px] h-[18px] text-white" strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col justify-center">
+                <h1 className="font-poppins font-bold text-[20px] text-[#17392B] leading-none tracking-tight">SpendWise</h1>
+                <p className="text-[11px] text-[#6F786F] mt-1 font-medium tracking-wide">Smart tracking. Better living.</p>
+              </div>
+            </motion.div>
+
+            {/* Spacer */}
+            <div className="h-[60px]"></div>
+
+            {/* Hero Heading & Subtext */}
+            <div className="w-full max-w-[480px]">
               <motion.div
-                key={i}
-                animate={{
-                  y: [0, -100],
-                  x: [0, (i % 2 === 0 ? 30 : -30)],
-                  opacity: [0, 0.8, 0]
-                }}
-                transition={{
-                  duration: 4 + i,
-                  repeat: Infinity,
-                  delay: i * 1.5,
-                  ease: "easeOut"
-                }}
-                className="absolute w-2 h-2 rounded-full bg-white/40 blur-[1px]"
-                style={{
-                  top: `${40 + (i * 10)}%`,
-                  left: `${30 + (i * 15)}%`
-                }}
-              />
-            ))}
-          </motion.div>
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                {isLogin ? (
+                  <>
+                    <h2 
+                      className="font-playfair text-[56px] font-semibold text-[#17392B] tracking-tight mb-4"
+                      style={{ lineHeight: 1.1 }}
+                    >
+                      Welcome back<br />
+                      to <span className="text-[#6B8E6B] italic">smarter</span><br />
+                      <span className="text-[#6B8E6B] italic relative inline-block">
+                        finances
+                        <Leaf className="inline w-[32px] h-[32px] ml-2 text-[#6B8E6B] -translate-y-1" strokeWidth={2} />
+                        <span className="absolute bottom-2 left-0 w-full h-[2px] bg-[#6B8E6B]/40 rounded-full"></span>
+                      </span>
+                    </h2>
+                    <p className="font-inter text-[16px] font-medium text-[#4B5563] w-[400px] leading-[1.6]">
+                      Log in to manage your expenses, track your savings and achieve financial clarity.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 
+                      className="font-playfair text-[56px] font-semibold text-[#17392B] tracking-tight mb-4"
+                      style={{ lineHeight: 1.1 }}
+                    >
+                      Start your journey<br />
+                      towards <span className="text-[#6B8E6B] italic relative inline-block">
+                        financial clarity.
+                        <span className="absolute bottom-2 left-0 w-full h-[2px] bg-[#6B8E6B]/40 rounded-full"></span>
+                      </span>
+                    </h2>
+                    <p className="font-inter text-[16px] font-medium text-[#4B5563] w-[400px] leading-[1.6]">
+                      Create your account and build smarter financial habits today.
+                    </p>
+                  </>
+                )}
+              </motion.div>
+
+              {/* Spacer */}
+              <div className="h-[40px]"></div>
+
+              {/* Feature Rows - Only show on Register */}
+              {!isLogin && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  className="flex flex-col gap-[24px]"
+                >
+                  {[
+                    { title: 'Smart expense tracking', subtext: 'Track every expense with ease.', icon: PieChart },
+                    { title: 'Monthly budget planning', subtext: 'Plan budgets and stay on track.', icon: Calendar },
+                    { title: 'Financial growth insights', subtext: 'Visualize growth and spend smarter.', icon: LineChart }
+                  ].map((feature, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      initial={{ x: -10, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.6 + (idx * 0.1), duration: 0.4 }}
+                      className="flex items-start gap-[16px]"
+                    >
+                      <div className="w-[48px] h-[48px] rounded-[14px] bg-[#EEF5EA] flex items-center justify-center shrink-0">
+                        <feature.icon className="w-[20px] h-[20px] text-[#184734]" strokeWidth={2} />
+                      </div>
+                      <div className="flex flex-col justify-center mt-1">
+                        <h3 className="text-[15px] font-semibold text-[#17392B] leading-tight mb-1">{feature.title}</h3>
+                        <p className="text-[13px] text-[#6F786F]">{feature.subtext}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT SECTION (48%) */}
-        <div className="w-full lg:w-[48%] h-full flex flex-col justify-center items-center relative z-20 bg-transparent">
+        {/* RIGHT SECTION (45%) */}
+        <div className="w-full lg:w-[45%] h-full flex flex-col justify-center items-center relative z-20 shrink-0 bg-[#FBFDFB]">
+          {/* Subtle gradient to blend the edge if needed, though split is sharp in image */}
           <Outlet />
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

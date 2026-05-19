@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Mail, Lock, UserRound } from 'lucide-react';
+import { Mail, Lock, User, EyeOff, Eye, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -19,11 +19,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const res = await login(formData);
       if (res && res.success) {
-        toast.success('Successfully logged in!');
+        toast.success('Logged in successfully!');
         navigate('/dashboard');
       } else {
         toast.error(res?.message || 'Login failed');
@@ -37,91 +36,74 @@ const Login = () => {
 
   return (
     <motion.div 
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full max-w-[560px] bg-[rgba(255,255,255,0.82)] backdrop-blur-[24px] rounded-[36px] p-[60px] mx-4 relative overflow-hidden group/card"
-      style={{
-        boxShadow: '0 20px 60px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.35)'
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-[460px] bg-white rounded-[24px] p-[48px] relative z-10"
+      style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}
     >
-      {/* Subtle edge glow on hover */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-
-      <div className="flex flex-col items-center mb-10 relative z-10">
-        {/* Double-layered Icon */}
-        <div className="w-[120px] h-[120px] bg-[rgba(139,169,127,0.12)] rounded-full flex items-center justify-center mb-6 relative">
-          <div className="absolute inset-0 border border-white/40 rounded-full animate-[spin_10s_linear_infinite] opacity-50"></div>
-          <div className="w-[90px] h-[90px] bg-[#EAF2E7] rounded-full flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
-            <UserRound className="w-10 h-10 text-[#183B2D] stroke-[1.5]" />
-          </div>
+      <div className="flex flex-col items-center mb-8">
+        {/* Top Icon */}
+        <div className="w-[72px] h-[72px] bg-[#EEF5EA] rounded-full flex items-center justify-center mb-5">
+          <User className="w-[32px] h-[32px] text-[#184734]" strokeWidth={1.5} />
         </div>
 
-        <h2 className="font-playfair text-[58px] font-semibold text-[#183B2D] leading-none text-center tracking-tight">
+        <h2 className="font-playfair text-[38px] font-semibold text-[#17392B] leading-none text-center tracking-tight mb-2">
           Welcome back
         </h2>
-        <p className="font-inter text-[18px] text-[#707B74] mt-3 text-center">
+        <p className="font-inter text-[15px] text-[#6F786F] text-center">
           Log in to your account to continue
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[22px] relative z-10">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[16px]">
+        
         {/* Email Field */}
-        <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-[24px] flex items-center pointer-events-none z-10">
-            <Mail className={`w-5 h-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-[#183B2D]' : 'text-[#8BA97F]'}`} />
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-[18px] flex items-center pointer-events-none">
+            <Mail className="w-[18px] h-[18px] text-[#A0ABA4]" strokeWidth={1.5} />
           </div>
           <input
             type="email"
             name="email"
             required
             placeholder="Email address"
-            className={`w-full h-[74px] rounded-[20px] bg-[rgba(255,255,255,0.75)] pl-[62px] pr-6 text-[18px] text-[#1F3F31] placeholder:text-[#A0ABA4] transition-all duration-300 outline-none
-              ${focusedField === 'email' 
-                ? 'border-[#8BA97F] shadow-[0_4px_20px_rgba(139,169,127,0.15)] bg-white' 
-                : 'border-[rgba(0,0,0,0.05)] hover:border-[#8BA97F]/50 hover:bg-[rgba(255,255,255,0.9)]'} 
-              border`}
+            className="w-full h-[56px] rounded-[12px] bg-white pl-[48px] pr-4 text-[15px] text-[#17392B] placeholder:text-[#A0ABA4] border border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-1 focus:ring-[#8DA57B] outline-none transition-all"
             value={formData.email}
             onChange={handleChange}
-            onFocus={() => setFocusedField('email')}
-            onBlur={() => setFocusedField(null)}
           />
         </div>
 
         {/* Password Field */}
-        <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-[24px] flex items-center pointer-events-none z-10">
-            <Lock className={`w-5 h-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-[#183B2D]' : 'text-[#8BA97F]'}`} />
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-[18px] flex items-center pointer-events-none">
+            <Lock className="w-[18px] h-[18px] text-[#A0ABA4]" strokeWidth={1.5} />
           </div>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             required
             placeholder="Password"
-            className={`w-full h-[74px] rounded-[20px] bg-[rgba(255,255,255,0.75)] pl-[62px] pr-6 text-[18px] text-[#1F3F31] placeholder:text-[#A0ABA4] transition-all duration-300 outline-none
-              ${focusedField === 'password' 
-                ? 'border-[#8BA97F] shadow-[0_4px_20px_rgba(139,169,127,0.15)] bg-white' 
-                : 'border-[rgba(0,0,0,0.05)] hover:border-[#8BA97F]/50 hover:bg-[rgba(255,255,255,0.9)]'} 
-              border`}
+            className="w-full h-[56px] rounded-[12px] bg-white pl-[48px] pr-[48px] text-[15px] text-[#17392B] placeholder:text-[#A0ABA4] border border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-1 focus:ring-[#8DA57B] outline-none transition-all"
             value={formData.password}
             onChange={handleChange}
-            onFocus={() => setFocusedField('password')}
-            onBlur={() => setFocusedField(null)}
           />
+          <button 
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-[18px] flex items-center text-[#A0ABA4] hover:text-[#17392B] transition-colors"
+          >
+            {showPassword ? <Eye className="w-[18px] h-[18px]" /> : <EyeOff className="w-[18px] h-[18px]" />}
+          </button>
         </div>
 
-        {/* Remember / Forgot row */}
-        <div className="flex items-center justify-between px-2 mt-1">
-          <label className="flex items-center gap-3 cursor-pointer group/cb">
-            <div className="w-5 h-5 rounded-[6px] border-[1.5px] border-[#A0ABA4] group-hover/cb:border-[#2B6A50] transition-colors flex items-center justify-center relative overflow-hidden">
-              <input type="checkbox" className="opacity-0 absolute w-0 h-0 peer" />
-              <div className="absolute inset-0 bg-[#2B6A50] opacity-0 peer-checked:opacity-100 transition-opacity flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-              </div>
-            </div>
-            <span className="text-[16px] text-[#707B74] group-hover/cb:text-[#2B6A50] font-medium transition-colors">Remember me</span>
+        {/* Remember me & Forgot Password */}
+        <div className="flex justify-between items-center mt-1 mb-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-[16px] h-[16px] rounded-[4px] border-[#E2E8F0] text-[#184734] focus:ring-[#184734]" />
+            <span className="text-[13px] font-medium text-[#4B5563]">Remember me</span>
           </label>
-          <a href="#" className="text-[16px] text-[#2B6A50] font-semibold hover:underline decoration-2 underline-offset-4">
+          <a href="#" className="text-[13px] font-semibold text-[#184734] hover:underline">
             Forgot password?
           </a>
         </div>
@@ -130,47 +112,50 @@ const Login = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-[74px] rounded-[22px] font-poppins font-semibold text-[24px] text-white mt-[12px] relative overflow-hidden group/btn disabled:opacity-70 flex items-center justify-center transition-all duration-300 hover:translate-y-[-3px] hover:shadow-[0_15px_30px_rgba(24,71,52,0.2)]"
-          style={{ background: 'linear-gradient(135deg, #184734 0%, #215C45 100%)' }}
+          className="w-full h-[56px] rounded-[12px] font-medium text-[16px] text-white flex items-center justify-center gap-2 transition-all hover:bg-[#123826] bg-[#184734]"
         >
-          {/* Glossy Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-50"></div>
-          {/* Hover Glow */}
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-          
-          <span className="relative z-10 flex items-center">
-            {loading ? (
-              <div className="w-6 h-6 border-3 border-white/80 border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              'Log in'
-            )}
-          </span>
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              Log in
+              <ArrowRight className="w-5 h-5" strokeWidth={2} />
+            </>
+          )}
         </button>
       </form>
-
-      {/* Social Login */}
-      <div className="mt-[36px] relative z-10">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-[1px] flex-1 bg-[rgba(0,0,0,0.06)]"></div>
-          <span className="text-[14px] text-[#A0ABA4] font-medium uppercase tracking-wider">or continue with</span>
-          <div className="h-[1px] flex-1 bg-[rgba(0,0,0,0.06)]"></div>
-        </div>
-        <div className="flex justify-between gap-4">
-          {['Google', 'Apple', 'Microsoft'].map((provider) => (
-            <button 
-              key={provider}
-              className="w-[150px] h-[72px] bg-[rgba(255,255,255,0.7)] border border-[rgba(255,255,255,0.5)] rounded-[20px] flex items-center justify-center font-medium text-[16px] text-[#4D5B52] shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] hover:bg-white hover:translate-y-[-2px] hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm"
-            >
-              {provider}
-            </button>
-          ))}
-        </div>
+      
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
+        <span className="text-[13px] text-[#A0ABA4] font-medium">or continue with</span>
+        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
       </div>
 
-      <div className="mt-[44px] text-center relative z-10">
-        <p className="text-[18px] text-[#68756D]">
+      {/* Social Login */}
+      <div className="flex justify-between gap-3">
+        {['Google', 'Apple', 'Microsoft'].map((provider) => {
+          let iconUrl = '';
+          if (provider === 'Google') iconUrl = 'https://www.svgrepo.com/show/475656/google-color.svg';
+          if (provider === 'Apple') iconUrl = 'https://www.svgrepo.com/show/511330/apple-173.svg';
+          if (provider === 'Microsoft') iconUrl = 'https://www.svgrepo.com/show/475666/microsoft-color.svg';
+
+          return (
+            <button 
+              key={provider}
+              className="flex-1 h-[48px] bg-white border border-[#E2E8F0] rounded-[12px] flex items-center justify-center gap-2 hover:bg-[#F8FAFC] transition-colors"
+            >
+              <img src={iconUrl} alt={provider} className="w-[18px] h-[18px]" />
+              <span className="text-[14px] font-medium text-[#4B5563]">{provider}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="mt-8 text-center">
+        <p className="text-[14px] text-[#6F786F]">
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#215C45] font-semibold hover:underline decoration-2 underline-offset-4">
+          <Link to="/register" className="text-[#184734] font-semibold hover:underline decoration-2 underline-offset-4">
             Create one
           </Link>
         </p>
