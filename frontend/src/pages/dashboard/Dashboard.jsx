@@ -1,60 +1,55 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { 
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell 
+} from 'recharts';
 import { 
   ArrowUpRight, 
   ArrowDownRight, 
-  Wallet, 
-  TrendingUp, 
-  TrendingDown, 
+  Wallet,
+  Download,
   PiggyBank,
-  Coffee,
-  ShoppingBag,
-  Home,
-  Car,
-  MoreHorizontal
+  PieChart as PieChartIcon,
+  TrendingUp,
+  Target,
+  Clock,
+  ArrowRight,
+  Plus
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import Loader from '../../components/common/Loader';
+import { useData } from '../../context/DataContext';
 
-const COLORS = ['#184734', '#22C55E', '#8DA57B', '#F59E0B', '#3B82F6', '#EF4444'];
-
-const getCategoryIcon = (category) => {
-  switch(category?.toLowerCase()) {
-    case 'food & dining': return <Coffee className="w-5 h-5 text-[#F59E0B]" />;
-    case 'shopping': return <ShoppingBag className="w-5 h-5 text-[#3B82F6]" />;
-    case 'housing': return <Home className="w-5 h-5 text-[#8DA57B]" />;
-    case 'transport': return <Car className="w-5 h-5 text-[#EF4444]" />;
-    default: return <Wallet className="w-5 h-5 text-[#184734]" />;
-  }
-};
+const COLORS = ['#144933', '#22C55E', '#3B82F6', '#F59E0B', '#8B5CF6', '#EF4444', '#9CA3AF'];
+const CATEGORIES = ['Food', 'Travel', 'Shopping', 'Bills', 'Entertainment', 'Education', 'Others'];
 
 const Dashboard = () => {
+  const { refreshTrigger, toggleGoalModal, toggleExpenseModal } = useData();
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({ totalBalance: 0, totalIncome: 0, totalExpense: 0, netSavings: 0 });
-  const [transactions, setTransactions] = useState([]);
-  const [categoryStats, setCategoryStats] = useState([]);
+  const [summary, setSummary] = useState({
+    totalBalance: { amount: 0, trend: '0%' },
+    monthlySpend: { amount: 0, trend: '0%' },
+    savingsLeft: { amount: 0, trend: '0%' },
+    monthlyBudget: { amount: 0, spent: 0 }
+  });
   const [trends, setTrends] = useState([]);
-  const [budgets, setBudgets] = useState([]);
+  const [categoryStats, setCategoryStats] = useState([]);
   const [goals, setGoals] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [summaryRes, transRes, catRes, trendsRes, budgetsRes, goalsRes] = await Promise.all([
+        const [summaryRes, trendsRes, catRes, goalsRes] = await Promise.all([
           apiService.getSummary(),
-          apiService.getTransactions(),
-          apiService.getCategories(),
           apiService.getTrends(),
-          apiService.getBudgets(),
+          apiService.getCategories(),
           apiService.getGoals()
         ]);
 
         if (summaryRes.data.success) setSummary(summaryRes.data.data);
-        if (transRes.data.success) setTransactions(transRes.data.data.slice(0, 5)); // Get top 5
-        if (catRes.data.success) setCategoryStats(catRes.data.data);
         if (trendsRes.data.success) setTrends(trendsRes.data.data);
-        if (budgetsRes.data.success) setBudgets(budgetsRes.data.data);
+        if (catRes.data.success) setCategoryStats(catRes.data.data);
         if (goalsRes.data.success) setGoals(goalsRes.data.data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -64,7 +59,11 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [refreshTrigger]);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  };
 
   if (loading) {
     return (
@@ -74,266 +73,408 @@ const Dashboard = () => {
     );
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  // Calculate budget percentage
+  const budgetPercentage = summary.monthlyBudget.amount > 0 
+    ? Math.min(100, Math.round((summary.monthlyBudget.spent / summary.monthlyBudget.amount) * 100))
+    : 0;
+
+  // Custom Tooltip for Line Chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-[#1E293B] px-4 py-2 rounded-xl shadow-lg border border-gray-100 dark:border-[#334155] flex flex-col items-center transition-colors">
+          <p className="text-[12px] text-gray-500 dark:text-[#94A3B8] font-medium mb-1">{label}</p>
+          <p className="text-[14px] text-[#144933] dark:text-[#10B981] font-bold">{formatCurrency(payload[0].value)}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
-    <div className="flex w-full h-full p-[40px] pt-0 gap-[32px] overflow-hidden">
+    <div className="flex w-full h-full gap-6 pb-20 overflow-hidden">
       
-      {/* MIDDLE SECTION (Main Content) */}
-      <div className="flex-grow flex flex-col gap-8 overflow-y-auto pr-4 custom-scrollbar pb-[100px]">
+      {/* LEFT MAIN CONTENT */}
+      <div className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 h-full">
         
-        {/* Summary Cards */}
+        {/* ROW 1: Summary Cards */}
         <div className="grid grid-cols-4 gap-6 shrink-0">
-          {[
-            { title: 'Total Balance', amount: summary.totalBalance, icon: Wallet, color: '#184734', trend: '+2.5%' },
-            { title: 'Total Income', amount: summary.totalIncome, icon: TrendingUp, color: '#22C55E', trend: '+12.4%' },
-            { title: 'Total Expenses', amount: summary.totalExpense, icon: TrendingDown, color: '#EF4444', trend: '-4.1%' },
-            { title: 'Net Savings', amount: summary.netSavings, icon: PiggyBank, color: '#3B82F6', trend: '+8.2%' },
-          ].map((card, i) => (
-            <motion.div 
-              key={i}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              className="bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:translate-y-[-2px] transition-all group"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-[16px] flex items-center justify-center" style={{ backgroundColor: `${card.color}15` }}>
-                  <card.icon className="w-6 h-6" style={{ color: card.color }} />
-                </div>
-                <div className={`flex items-center gap-1 text-[13px] font-medium px-2 py-1 rounded-full ${card.trend.startsWith('+') ? 'text-[#22C55E] bg-[#22C55E]/10' : 'text-[#EF4444] bg-[#EF4444]/10'}`}>
-                  {card.trend.startsWith('+') ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {card.trend.replace('+', '').replace('-', '')}
-                </div>
-              </div>
-              <h3 className="text-[15px] font-medium text-[#6E7A71] mb-1">{card.title}</h3>
-              <p className="text-[28px] font-bold text-[#1D4735] tracking-tight">{formatCurrency(card.amount)}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Charts Row */}
-        <div className="flex gap-6 shrink-0 h-[380px]">
-          {/* Donut Chart */}
+          
+          {/* Total Balance */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="w-[40%] bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60 flex flex-col"
+            transition={{ delay: 0.1 }}
+            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden group transition-colors"
           >
-            <h3 className="font-poppins font-semibold text-[18px] text-[#1D4735] mb-4">Spending Overview</h3>
-            <div className="flex-1 relative flex items-center justify-center">
-              {categoryStats.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryStats}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="amount"
-                      nameKey="category"
-                      stroke="none"
-                    >
-                      {categoryStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip 
-                      formatter={(value) => formatCurrency(value)}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-[#6E7A71]">No expense data</p>
-              )}
-              {categoryStats.length > 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-                  <span className="text-[13px] text-[#6E7A71] font-medium">Total</span>
-                  <span className="text-[22px] font-bold text-[#1D4735]">{formatCurrency(summary.totalExpense)}</span>
-                </div>
-              )}
+            <div className="flex items-start gap-4 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#EEF5ED] dark:bg-[#10B981]/10 flex items-center justify-center transition-colors">
+                <Wallet className="w-5 h-5 text-[#22C55E] dark:text-[#10B981]" />
+              </div>
+              <div className="pt-1">
+                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Total Balance</p>
+                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.totalBalance.amount)}</h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>{summary.totalBalance.trend} vs last month</span>
+            </div>
+            {/* Simple decorative chart line */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-[#22C55E] fill-transparent stroke-2">
+                <path d="M0 30 Q 20 10, 40 20 T 80 10 T 100 20" />
+              </svg>
             </div>
           </motion.div>
 
-          {/* Line Chart */}
+          {/* Monthly Spend */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="flex-1 bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60 flex flex-col"
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden transition-colors"
+          >
+            <div className="flex items-start gap-4 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center transition-colors">
+                <Download className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              </div>
+              <div className="pt-1">
+                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Monthly Spend</p>
+                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.monthlySpend.amount)}</h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>{summary.monthlySpend.trend} vs last month</span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-blue-500 fill-transparent stroke-2">
+                <path d="M0 20 Q 20 30, 40 10 T 80 20 T 100 10" />
+              </svg>
+            </div>
+          </motion.div>
+
+          {/* Savings Left */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden transition-colors"
+          >
+            <div className="flex items-start gap-4 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center transition-colors">
+                <PiggyBank className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+              </div>
+              <div className="pt-1">
+                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Savings Left</p>
+                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.savingsLeft.amount)}</h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>{summary.savingsLeft.trend} vs last month</span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-orange-500 fill-transparent stroke-2">
+                <path d="M0 25 Q 30 10, 50 20 T 100 5" />
+              </svg>
+            </div>
+          </motion.div>
+
+          {/* Monthly Budget */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden flex flex-col justify-between transition-colors"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center transition-colors">
+                  <PieChartIcon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                </div>
+                <div className="pt-1">
+                  <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Monthly Budget</p>
+                  <p className="text-[12px] font-medium text-gray-400 dark:text-[#64748B] mt-1 transition-colors">{formatCurrency(summary.monthlyBudget.spent)} of {formatCurrency(summary.monthlyBudget.amount)}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Circular Progress */}
+            <div className="absolute right-4 bottom-4 w-16 h-16">
+               <svg viewBox="0 0 36 36" className="w-full h-full">
+                  <path
+                    className="text-gray-100 dark:text-gray-700 transition-colors"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                  />
+                  <path
+                    className="text-purple-500 dark:text-purple-400 drop-shadow-sm transition-all duration-1000 ease-out"
+                    strokeDasharray={`${budgetPercentage}, 100`}
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                  />
+                  <text x="18" y="20.35" className="text-[10px] font-bold fill-purple-600 dark:fill-purple-400 transition-colors" textAnchor="middle">{budgetPercentage}%</text>
+                </svg>
+            </div>
+          </motion.div>
+
+        </div>
+
+        {/* ROW 2: Charts */}
+        <div className="flex gap-6 shrink-0 h-[360px]">
+          
+          {/* Monthly Spending Trend */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex-[3] bg-white dark:bg-[#1E293B] rounded-[24px] p-6 border border-[#F0F0F0] dark:border-[#334155] shadow-sm flex flex-col transition-colors"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-poppins font-semibold text-[18px] text-[#1D4735]">Expense Trend</h3>
-              <select className="bg-transparent text-[14px] font-medium text-[#6E7A71] outline-none cursor-pointer">
-                <option>This Year</option>
-                <option>Last Year</option>
+              <h3 className="font-semibold text-[16px] text-[#1F2937] dark:text-white transition-colors">Monthly Spending Trend</h3>
+              <select className="bg-gray-50 dark:bg-[#0F172A] border-none text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] outline-none cursor-pointer px-3 py-1.5 rounded-lg transition-colors">
+                <option>This Month</option>
+                <option>Last Month</option>
               </select>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full h-full pb-4">
               {trends.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#184734" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#184734" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#22C55E" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#A0ABA4' }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#A0ABA4' }} tickFormatter={(value) => `$${value}`} />
-                    <RechartsTooltip 
-                      formatter={(value) => [formatCurrency(value), 'Expenses']}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }} 
+                      dy={10} 
+                      minTickGap={20}
                     />
-                    <Area type="monotone" dataKey="amount" stroke="#184734" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 12, fill: '#9CA3AF' }} 
+                      tickFormatter={(value) => `₹${value/1000}k`} 
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#22C55E', strokeWidth: 1, strokeDasharray: '5 5' }} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="amount" 
+                      stroke="#22C55E" 
+                      strokeWidth={3} 
+                      fillOpacity={1} 
+                      fill="url(#colorAmount)"
+                      activeDot={{ r: 6, fill: '#fff', stroke: '#22C55E', strokeWidth: 2 }}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#6E7A71]">No trend data</div>
+                <div className="w-full h-full flex items-center justify-center text-gray-400">No trend data for this month</div>
               )}
+            </div>
+          </motion.div>
+
+          {/* Expense Breakdown */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="flex-[2] bg-white dark:bg-[#1E293B] rounded-[24px] p-6 border border-[#F0F0F0] dark:border-[#334155] shadow-sm flex flex-col transition-colors"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-semibold text-[16px] text-[#1F2937] dark:text-white transition-colors">Expense Breakdown</h3>
+              <select className="bg-gray-50 dark:bg-[#0F172A] border-none text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] outline-none cursor-pointer px-3 py-1.5 rounded-lg transition-colors">
+                <option>This Month</option>
+              </select>
+            </div>
+            
+            <div className="flex-1 flex items-center justify-between">
+              {/* Donut Chart */}
+              <div className="w-[180px] h-[180px] relative">
+                {categoryStats.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryStats}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={85}
+                        paddingAngle={5}
+                        dataKey="amount"
+                        stroke="none"
+                      >
+                        {categoryStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No Data</div>
+                )}
+                {/* Center text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[16px] font-bold text-[#1F2937] dark:text-white transition-colors">{formatCurrency(summary.monthlySpend.amount)}</span>
+                  <span className="text-[11px] text-gray-500 dark:text-[#94A3B8] font-medium transition-colors">Total Spend</span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex-1 flex flex-col gap-2.5 ml-6">
+                {categoryStats.slice(0, 6).map((stat, i) => (
+                  <div key={i} className="flex items-center justify-between text-[12px]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                      <span className="text-gray-600 dark:text-gray-400 font-medium transition-colors">{stat.category}</span>
+                    </div>
+                    <div className="flex gap-3 text-right">
+                      <span className="font-semibold text-[#1F2937] dark:text-white w-14 transition-colors">{formatCurrency(stat.amount).replace('₹', '₹ ')}</span>
+                      <span className="text-gray-400 dark:text-gray-500 w-8 transition-colors">{stat.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Recent Transactions */}
+        {/* ROW 3: Savings Goals */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60 shrink-0"
+          transition={{ delay: 0.7 }}
+          className="bg-white dark:bg-[#1E293B] rounded-[24px] p-6 border border-[#F0F0F0] dark:border-[#334155] shadow-sm shrink-0 transition-colors"
         >
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-poppins font-semibold text-[18px] text-[#1D4735]">Recent Transactions</h3>
-            <button className="text-[14px] font-medium text-[#184734] hover:underline">View all</button>
+            <h3 className="font-semibold text-[16px] text-[#1F2937] dark:text-white transition-colors">Savings Goals</h3>
+            <button className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center gap-1 hover:underline transition-colors">
+              View All Goals <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-          
-          <div className="flex flex-col gap-4">
-            {transactions.length > 0 ? transactions.map((t, i) => (
-              <div key={t._id || i} className="flex items-center justify-between p-3 rounded-[16px] hover:bg-white transition-colors group cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#EEF3EB] flex items-center justify-center border border-white">
-                    {getCategoryIcon(t.category)}
+
+          <div className="grid grid-cols-3 gap-6">
+            {/* Display Top 2 Goals + Create New button */}
+            {goals.slice(0, 2).map((goal, i) => {
+              const percent = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
+              return (
+                <div key={goal._id} className="flex gap-4 items-center bg-gray-50/50 dark:bg-[#0F172A]/50 p-4 rounded-[16px] border border-gray-100 dark:border-[#334155] transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#1E293B] flex items-center justify-center shadow-sm text-2xl transition-colors">
+                    {i === 0 ? '💻' : '✈️'}
                   </div>
-                  <div>
-                    <h4 className="font-medium text-[#1D4735]">{t.title}</h4>
-                    <p className="text-[13px] text-[#6E7A71] mt-0.5">{t.category} • {new Date(t.date).toLocaleDateString()}</p>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-[14px] text-[#1F2937] dark:text-white mb-1 transition-colors">{goal.title}</h4>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-1.5 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden transition-colors">
+                        <div className="h-full bg-[#144933] dark:bg-[#10B981] rounded-full transition-colors" style={{ width: `${percent}%` }}></div>
+                      </div>
+                      <span className="text-[12px] font-bold text-gray-500 dark:text-[#94A3B8] transition-colors">{percent}%</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-gray-500 dark:text-[#64748B] transition-colors">
+                      <span>{formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}</span>
+                      <span>Estimated: {Math.ceil((goal.targetAmount - goal.currentAmount) / summary.savingsLeft.amount) || 1} months left</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`font-semibold ${t.type === 'income' ? 'text-[#22C55E]' : 'text-[#1D4735]'}`}>
-                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                  </span>
-                  <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#EEF3EB] text-[#A0ABA4] hover:text-[#184734] opacity-0 group-hover:opacity-100 transition-all">
-                    <MoreHorizontal className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            )) : (
-              <p className="text-[#6E7A71] text-center py-4">No transactions yet.</p>
-            )}
+              );
+            })}
+
+            {/* Create New Goal Button */}
+            <button 
+              onClick={toggleGoalModal}
+              className="flex items-center justify-center gap-2 border-2 border-dashed border-[#144933]/30 dark:border-[#10B981]/30 rounded-[16px] text-[#144933] dark:text-[#10B981] font-medium text-[14px] hover:bg-[#EEF5ED] dark:hover:bg-[#10B981]/10 hover:border-[#144933]/50 dark:hover:border-[#10B981]/50 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Create New Goal
+            </button>
           </div>
         </motion.div>
 
       </div>
 
-      {/* RIGHT ANALYTICS PANEL (320px) */}
+      {/* RIGHT SIDEBAR: INSIGHTS (Width: ~320px) */}
       <motion.div 
-        initial={{ x: 30, opacity: 0 }}
+        initial={{ x: 20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        className="w-[320px] h-full flex flex-col gap-6 shrink-0 overflow-y-auto custom-scrollbar pb-[100px]"
+        transition={{ delay: 0.4 }}
+        className="w-[320px] flex flex-col gap-6 shrink-0 h-full overflow-y-auto custom-scrollbar"
       >
         
-        {/* Budget Overview */}
-        <div className="bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60">
-          <h3 className="font-poppins font-semibold text-[18px] text-[#1D4735] mb-5">Budget Overview</h3>
-          {budgets.length > 0 ? (
-            <div className="flex flex-col gap-5">
-              {budgets.map((b, i) => {
-                // Find spent amount from categoryStats
-                const spentStat = categoryStats.find(c => c.category === b.category);
-                const spent = spentStat ? spentStat.amount : 0;
-                const percent = Math.min(100, Math.round((spent / b.limitAmount) * 100));
-                const isWarning = percent >= 90;
-                
-                return (
-                  <div key={b._id || i}>
-                    <div className="flex justify-between items-end mb-2">
-                      <span className="font-medium text-[#1D4735]">{b.category}</span>
-                      <span className="text-[13px] text-[#6E7A71]">{formatCurrency(spent)} / {formatCurrency(b.limitAmount)}</span>
-                    </div>
-                    <div className="w-full h-2 bg-[#EEF3EB] rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percent}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className={`h-full rounded-full ${isWarning ? 'bg-[#EF4444]' : 'bg-[#184734]'}`}
-                      ></motion.div>
-                    </div>
-                  </div>
-                )
-              })}
+        {/* Insights Card */}
+        <div className="bg-white dark:bg-[#1E293B] rounded-[24px] p-6 border border-[#F0F0F0] dark:border-[#334155] shadow-sm flex flex-col gap-5 transition-colors">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-gray-400 dark:text-gray-500 transition-colors" />
+            <h3 className="font-semibold text-[16px] text-[#1F2937] dark:text-white transition-colors">Insights</h3>
+          </div>
+
+          {/* Insight 1 */}
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center shrink-0 transition-colors">
+              <TrendingUp className="w-5 h-5 text-green-500 dark:text-green-400 transition-colors" />
             </div>
-          ) : (
-             <p className="text-[#6E7A71] text-sm">No budgets set for this month.</p>
-          )}
-        </div>
-
-        {/* Recent Goals */}
-        <div className="bg-[rgba(255,255,255,0.85)] backdrop-blur-md rounded-[24px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="font-poppins font-semibold text-[18px] text-[#1D4735]">Recent Goals</h3>
-            <button className="w-8 h-8 rounded-full bg-[#EEF3EB] flex items-center justify-center text-[#184734] hover:bg-[#184734] hover:text-white transition-colors text-xl leading-none pb-1">+</button>
-          </div>
-          
-          <div className="flex flex-col gap-4">
-            {goals.length > 0 ? goals.map((g, i) => {
-              const percent = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
-              return (
-                <div key={g._id || i} className="p-4 rounded-[16px] bg-white border border-[rgba(0,0,0,0.03)] hover:shadow-sm transition-shadow">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-[#1D4735]">{g.title}</span>
-                    <span className="text-[13px] font-bold" style={{ color: g.color || '#10B981' }}>{percent}%</span>
-                  </div>
-                  <p className="text-[12px] text-[#6E7A71] mb-3">{formatCurrency(g.currentAmount)} of {formatCurrency(g.targetAmount)}</p>
-                  <div className="w-full h-1.5 bg-[#EEF3EB] rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${percent}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: g.color || '#10B981' }}
-                    ></motion.div>
-                  </div>
-                </div>
-              );
-            }) : (
-              <p className="text-[#6E7A71] text-sm">No savings goals yet.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Insight Card */}
-        <div className="mt-auto relative rounded-[24px] p-6 overflow-hidden bg-[#184734] text-white shadow-xl">
-          <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-gradient-to-bl from-[#22C55E] to-transparent opacity-20 rounded-full blur-2xl translate-x-10 -translate-y-10"></div>
-          <div className="relative z-10">
-            <h3 className="font-poppins font-bold text-[20px] mb-2 leading-tight">Stay on track!</h3>
-            <p className="text-[14px] text-white/80 leading-relaxed mb-4">
-              You're saving more than 85% of users this month. Keep up the great work!
+            <p className="text-[13px] text-gray-600 dark:text-[#94A3B8] leading-relaxed pt-1 transition-colors">
+              <span className="font-semibold text-[#1F2937] dark:text-white transition-colors">You spent 18% less</span> this week compared to last week. Great job!
             </p>
-            <button className="bg-white text-[#184734] font-semibold text-[14px] px-5 py-2.5 rounded-xl hover:bg-[#EEF3EB] hover:scale-105 transition-all w-full">
-              View insights
+          </div>
+
+          {/* Insight 2 */}
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center shrink-0 transition-colors">
+              <Target className="w-5 h-5 text-orange-500 dark:text-orange-400 transition-colors" />
+            </div>
+            <p className="text-[13px] text-gray-600 dark:text-[#94A3B8] leading-relaxed pt-1 transition-colors">
+              <span className="font-semibold text-[#1F2937] dark:text-white transition-colors">Food</span> is your highest spending category this month.
+            </p>
+          </div>
+
+          {/* Insight 3 */}
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0 transition-colors">
+              <Clock className="w-5 h-5 text-purple-500 dark:text-purple-400 transition-colors" />
+            </div>
+            <p className="text-[13px] text-gray-600 dark:text-[#94A3B8] leading-relaxed pt-1 transition-colors">
+              You're <span className="font-semibold text-[#1F2937] dark:text-white transition-colors">25% away</span> from reaching your monthly budget limit.
+            </p>
+          </div>
+
+          <button className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center gap-1 mt-2 hover:underline transition-colors">
+            View all insights <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Promo / Banner Card */}
+        <div className="bg-[#EEF5ED] dark:bg-[#10B981]/10 rounded-[24px] p-6 border border-[#144933]/10 dark:border-[#10B981]/20 relative overflow-hidden flex flex-col justify-between min-h-[200px] transition-colors">
+          <div className="relative z-10 w-[70%]">
+            <h3 className="font-bold text-[18px] text-[#144933] dark:text-[#10B981] leading-snug mb-2 transition-colors">Take control of your finances</h3>
+            <p className="text-[13px] text-[#144933]/80 dark:text-[#10B981]/80 leading-relaxed mb-5 transition-colors">
+              Add your expenses, set budgets and achieve your goals.
+            </p>
+            <button 
+              onClick={toggleExpenseModal}
+              className="bg-[#144933] dark:bg-[#10B981] text-white px-5 py-2.5 rounded-xl font-medium text-[13px] shadow-sm hover:bg-[#0f3826] dark:hover:bg-[#059669] transition-colors"
+            >
+              + Add Expense
             </button>
+          </div>
+          {/* Mockup Wallet Image Graphic */}
+          <div className="absolute -bottom-4 -right-4 text-[90px] drop-shadow-xl rotate-[-10deg]">
+            👛
           </div>
         </div>
 
       </motion.div>
+
     </div>
   );
 };

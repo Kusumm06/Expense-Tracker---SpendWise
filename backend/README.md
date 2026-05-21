@@ -45,8 +45,8 @@ A complete backend for a MERN stack Expense Tracker application.
 1. **Register**: Send a `POST` request to `/api/auth/register` with JSON body:
    ```json
    {
-     "name": "John Doe",
-     "email": "john@example.com",
+     "name": "Kusum Paryani",
+     "email": "kusum@gmail.com",
      "password": "password123"
    }
    ```

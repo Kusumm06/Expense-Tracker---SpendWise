@@ -29,17 +29,22 @@ export const apiService = {
   createTransaction: (data) => api.post('/transactions', data),
   
   // Budgets
-  getBudgets: () => api.get('/budgets'),
+  getBudgets: (month) => api.get(month ? `/budgets?month=${month}` : '/budgets'),
   createBudget: (data) => api.post('/budgets', data),
+  deleteBudget: (id) => api.delete(`/budgets/${id}`),
   
   // Goals
   getGoals: () => api.get('/goals'),
   createGoal: (data) => api.post('/goals', data),
+  updateGoal: (id, data) => api.put(`/goals/${id}`, data),
+  deleteGoal: (id) => api.delete(`/goals/${id}`),
   
   // Analytics
   getSummary: () => api.get('/analytics/summary'),
   getCategories: () => api.get('/analytics/categories'),
   getTrends: () => api.get('/analytics/trends'),
+  getTopCategories: () => api.get('/analytics/top-categories'),
+  getAdvancedAnalytics: () => api.get('/analytics/advanced'),
 };
 
 export default api;

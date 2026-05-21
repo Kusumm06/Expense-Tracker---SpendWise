@@ -1,6 +1,8 @@
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import { DataProvider } from './context/DataContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -30,7 +32,11 @@ function App() {
             },
           }}
         />
-        <AppRoutes />
+        <ThemeProvider>
+          <DataProvider>
+            <AppRoutes />
+          </DataProvider>
+        </ThemeProvider>
       </AuthProvider>
     </Router>
   );
