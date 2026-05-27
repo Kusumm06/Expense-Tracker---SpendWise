@@ -62,7 +62,10 @@ const Goals = () => {
   };
 
   // Derived Statistics
-  const totalGoals = goals.length;
+  const activeGoals = goals.filter(g => g.status !== 'completed');
+  const completedGoals = goals.filter(g => g.status === 'completed');
+  
+  const totalGoals = activeGoals.length;
   const totalSaved = goals.reduce((acc, g) => acc + g.currentAmount, 0);
   
   const avgProgress = totalGoals > 0 
@@ -204,23 +207,15 @@ const Goals = () => {
       {/* List Section */}
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Your Goals</h2>
-          <div className="flex items-center gap-2 text-sm text-[#6B7280] dark:text-[#94A3B8]">
-            <span>Sort by:</span>
-            <select className="bg-transparent font-medium text-gray-900 dark:text-white outline-none cursor-pointer focus:ring-0">
-              <option value="progress">Progress</option>
-              <option value="recent">Recently Added</option>
-              <option value="amount">Amount</option>
-            </select>
-          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Your Active Goals</h2>
         </div>
 
         <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-[#334155] overflow-hidden transition-colors">
-          {goals.length === 0 ? (
+          {activeGoals.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center">
                <Target className="w-12 h-12 text-gray-300 dark:text-[#334155] mb-4" />
-               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No goals yet</h3>
-               <p className="text-[#6B7280] dark:text-[#94A3B8] max-w-sm">Create a goal to start saving for the things that matter to you.</p>
+               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No active goals</h3>
+               <p className="text-[#6B7280] dark:text-[#94A3B8] max-w-sm">Create a new goal to start saving for the things that matter to you.</p>
                <button 
                  onClick={toggleGoalModal}
                  className="mt-6 bg-[#144933] dark:bg-[#10B981] hover:bg-[#0f3826] dark:hover:bg-[#059669] text-white px-6 py-2.5 rounded-xl font-medium transition-colors"
@@ -230,7 +225,7 @@ const Goals = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-[#334155]">
-              {goals.map((goal, index) => {
+              {activeGoals.map((goal, index) => {
                 const percentage = Math.min(Math.round((goal.currentAmount / goal.targetAmount) * 100), 100);
                 const isOnTrack = percentage >= 50 || new Date(goal.deadline) > new Date(); // Simplified logic
                 const Icon = getGoalIcon(goal.title);
@@ -304,6 +299,62 @@ const Goals = () => {
             </div>
           )}
         </div>
+
+        {/* Completed Goals Section */}
+        {completedGoals.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white transition-colors mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-green-500" />
+              Completed Goals
+            </h2>
+            <div className="bg-[#EEF5ED] dark:bg-[#10B981]/10 rounded-2xl border border-[#144933]/10 dark:border-[#10B981]/20 overflow-hidden transition-colors">
+              <div className="divide-y divide-[#144933]/5 dark:divide-[#10B981]/10">
+                {completedGoals.map((goal, index) => {
+                  const Icon = getGoalIcon(goal.title);
+                  return (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      key={goal._id}
+                      className="p-6 flex items-center justify-between hover:bg-[#144933]/5 dark:hover:bg-[#10B981]/5 transition-colors group cursor-pointer"
+                      onClick={() => handleEditClick(goal)}
+                    >
+                      <div className="flex items-center gap-5 w-1/3 min-w-[250px]">
+                        <div className="w-14 h-14 bg-green-100 dark:bg-[#10B981]/20 rounded-full flex items-center justify-center shrink-0 border border-green-200 dark:border-[#10B981]/30">
+                           <Icon className="w-7 h-7 text-green-600 dark:text-[#10B981]" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-[16px] text-gray-900 dark:text-white transition-colors line-through decoration-green-500/50">{goal.title}</h4>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-200 text-green-800 dark:bg-[#10B981]/30 dark:text-[#10B981] border border-green-300 dark:border-[#10B981]/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                              ✅ Completed
+                            </span>
+                          </div>
+                          <p className="text-[13px] text-green-700/70 dark:text-[#10B981]/70 truncate transition-colors">Target reached: ₹{goal.targetAmount.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Success Glow Box */}
+                      <div className="flex-1 flex justify-center">
+                         <div className="bg-white/60 dark:bg-[#0F172A]/40 px-6 py-2 rounded-xl flex flex-col items-center border border-green-200/50 dark:border-[#10B981]/20 shadow-sm backdrop-blur-sm">
+                            <span className="text-[11px] text-green-600 dark:text-[#10B981]/80 font-semibold mb-0.5 uppercase tracking-wider">Status</span>
+                            <span className="text-[14px] font-bold text-gray-800 dark:text-white">Goal Achieved</span>
+                         </div>
+                      </div>
+
+                      <div className="flex items-center justify-end w-[280px]">
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center text-green-600 dark:text-[#10B981] hover:bg-green-100 dark:hover:bg-[#10B981]/20 transition-colors">
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer Banner */}

@@ -23,6 +23,11 @@ const goalSchema = new mongoose.Schema(
       type: String,
       default: '#10B981', // Default green
     },
+    status: {
+      type: String,
+      enum: ['active', 'completed'],
+      default: 'active',
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

@@ -1,6 +1,7 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard,
   BarChart2,
@@ -18,14 +19,59 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import AddExpenseModal from '../components/common/AddExpenseModal';
+import AddIncomeModal from '../components/common/AddIncomeModal';
 import AddGoalModal from '../components/common/AddGoalModal';
 import { useTheme } from '../context/ThemeContext';
 
 const MainLayout = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const { toggleExpenseModal } = useData();
+  const { toggleExpenseModal, toggleIncomeModal } = useData();
   const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = useRef(null);
+  
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch notifications
+  useEffect(() => {
+    if (user) {
+      import('../services/api').then(({ apiService }) => {
+        apiService.getNotifications()
+          .then(res => {
+            if (res.data.success) {
+              setNotifications(res.data.data);
+              setUnreadCount(res.data.data.filter(n => !n.isRead).length);
+            }
+          })
+          .catch(err => console.error("Failed to load notifications", err));
+      });
+    }
+  }, [user]);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      const { apiService } = await import('../services/api');
+      await apiService.markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -116,7 +162,10 @@ const MainLayout = () => {
           </div>
 
           {/* User Profile Summary */}
-          <div className="flex items-center justify-between mt-2 pt-4 border-t border-[#F0F0F0] dark:border-[#334155] cursor-pointer hover:bg-gray-50 dark:hover:bg-[#334155]/50 p-2 rounded-xl transition-colors">
+          <div 
+            onClick={() => navigate('/profile')}
+            className="flex items-center justify-between mt-2 pt-4 border-t border-[#F0F0F0] dark:border-[#334155] cursor-pointer hover:bg-gray-50 dark:hover:bg-[#334155]/50 p-2 rounded-xl transition-all"
+          >
             <div className="flex items-center gap-3">
               <img 
                 src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" 
@@ -148,23 +197,82 @@ const MainLayout = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF] dark:text-[#64748B]" />
-              <input
-                type="text"
-                placeholder="Search something..."
-                className="w-[300px] h-11 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl pl-11 pr-12 text-[14px] text-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#144933] dark:focus:ring-[#10B981] shadow-sm transition-colors"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-100 dark:bg-[#0F172A] px-1.5 py-0.5 rounded text-[11px] text-gray-500 dark:text-[#94A3B8] font-medium transition-colors">
-                <span className="text-[10px]">⌘</span> K
-              </div>
-            </div>
 
             {/* Notification */}
-            <button className="relative text-[#4B5563] dark:text-[#94A3B8] hover:text-[#144933] dark:hover:text-[#10B981] transition-colors">
-              <Bell className="w-[22px] h-[22px]" />
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#FAFAFA] dark:border-[#0F172A] transition-colors"></span>
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="relative text-[#4B5563] dark:text-[#94A3B8] hover:text-[#144933] dark:hover:text-[#10B981] transition-colors"
+              >
+                <Bell className="w-[22px] h-[22px]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#FAFAFA] dark:border-[#0F172A] transition-colors"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              <AnimatePresence>
+                {isNotifOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-4 w-[350px] bg-white dark:bg-[#1E293B] border border-gray-100 dark:border-[#334155] rounded-2xl shadow-xl z-50 overflow-hidden"
+                  >
+                    <div className="p-4 border-b border-gray-100 dark:border-[#334155] flex justify-between items-center">
+                      <h3 className="font-semibold text-[#1F2937] dark:text-white">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <span className="text-[12px] bg-[#EEF5ED] text-[#144933] dark:bg-[#10B981]/10 dark:text-[#10B981] px-2 py-0.5 rounded-full font-medium">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500 dark:text-[#94A3B8] text-[13px]">
+                          You have no notifications.
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif._id} 
+                            onClick={() => !notif.isRead && handleMarkAsRead(notif._id)}
+                            className={`p-4 border-b border-gray-50 dark:border-[#334155]/50 hover:bg-gray-50 dark:hover:bg-[#334155]/50 cursor-pointer transition-colors flex gap-3 ${!notif.isRead ? 'bg-gray-50/50 dark:bg-[#0F172A]/30' : ''}`}
+                          >
+                            <div className="mt-1">
+                              {notif.type === 'alert' ? <div className="w-2 h-2 rounded-full bg-red-500"></div> : 
+                               notif.type === 'warning' ? <div className="w-2 h-2 rounded-full bg-orange-500"></div> :
+                               <div className="w-2 h-2 rounded-full bg-green-500"></div>}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className={`text-[13px] font-medium ${!notif.isRead ? 'text-[#1F2937] dark:text-white' : 'text-gray-600 dark:text-[#94A3B8]'}`}>
+                                {notif.title}
+                              </h4>
+                              <p className="text-[12px] text-gray-500 dark:text-[#64748B] mt-1 leading-relaxed">
+                                {notif.message}
+                              </p>
+                              <span className="text-[10px] text-gray-400 dark:text-[#64748B] mt-2 block">
+                                {new Date(notif.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Add Income Button */}
+            <button 
+              onClick={toggleIncomeModal}
+              className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] text-[#144933] dark:text-[#10B981] hover:bg-gray-50 dark:hover:bg-[#334155]/50 h-11 px-5 rounded-full font-medium text-[14px] transition-colors shadow-sm"
+            >
+              <Plus className="w-[18px] h-[18px]" />
+              Add Income
             </button>
 
             {/* Add Expense Button */}
@@ -177,7 +285,7 @@ const MainLayout = () => {
             </button>
 
             {/* Profile Image */}
-            <button className="ml-2">
+            <button className="ml-2 transition-transform hover:scale-105" onClick={() => navigate('/profile')}>
               <img 
                 src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" 
                 alt="Profile" 
@@ -196,6 +304,7 @@ const MainLayout = () => {
       
       {/* Modals */}
       <AddExpenseModal />
+      <AddIncomeModal />
       <AddGoalModal />
 
     </div>

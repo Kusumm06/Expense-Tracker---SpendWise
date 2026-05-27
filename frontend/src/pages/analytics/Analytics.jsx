@@ -37,9 +37,12 @@ const CHART_COLORS = {
   Others: '#9CA3AF' // gray
 };
 
+import { useNavigate } from 'react-router-dom';
+
 const Analytics = () => {
   const { isDarkMode } = useTheme();
   const { toggleExpenseModal, refreshTrigger } = useData();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
   const [data, setData] = useState({
@@ -99,8 +102,8 @@ const Analytics = () => {
   // To match the screenshot exactly (Income, Spent, Savings, Daily Spend), we compute missing ones if needed.
   // The backend summary does not explicitly return currentIncome in the payload, but savingsLeft = income - spend.
   // So income = savingsLeft.amount + monthlySpend.amount.
-  const totalIncome = summary.savingsLeft.amount + summary.monthlySpend.amount;
-  const totalSpent = summary.monthlySpend.amount;
+  const totalIncome = summary.totalIncome.amount;
+  const totalSpent = summary.totalExpenses.amount;
   const totalSavings = summary.savingsLeft.amount;
   
   const dateObj = new Date();
@@ -164,9 +167,12 @@ const Analytics = () => {
              <Calendar className="w-4 h-4 text-gray-400" />
              May 1 - May 31, 2025
           </div>
-          <button className="h-11 px-4 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl flex items-center gap-2 text-sm font-medium text-[#144933] dark:text-[#10B981] shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-[#334155]/50">
+          <button 
+            onClick={() => navigate('/reports')}
+            className="h-11 px-4 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl flex items-center gap-2 text-sm font-medium text-[#144933] dark:text-[#10B981] shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-[#334155]/50"
+          >
              <Download className="w-4 h-4" />
-             Export Report
+             View Reports
           </button>
           <button 
             onClick={toggleExpenseModal}
@@ -190,7 +196,7 @@ const Analytics = () => {
           </div>
           <h3 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1">{formatCurrency(totalSpent)}</h3>
           <div className="flex items-center gap-1 text-[11px] font-semibold text-[#10B981]">
-            <ArrowUpRight className="w-3 h-3" /> {summary.monthlySpend.trend} vs Apr
+            <ArrowUpRight className="w-3 h-3" /> {summary.totalExpenses.trend} vs Apr
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30">
             <ResponsiveContainer width="100%" height="100%">
@@ -460,7 +466,7 @@ const Analytics = () => {
             {categories.slice(0, 5).map((cat, idx) => {
                const config = getCategoryConfig(cat.category);
                const Icon = config.icon;
-               const maxAmount = categories[0].amount;
+               const maxAmount = categories.length > 0 ? categories[0].amount : 1;
                const widthPercent = (cat.amount / maxAmount) * 100;
                
                return (

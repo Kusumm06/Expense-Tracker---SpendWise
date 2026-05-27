@@ -10,9 +10,7 @@ const register = async (userData) => {
 
 const login = async (userData) => {
   const response = await api.post('/auth/login', userData);
-  if (response.data.success && response.data.data.token) {
-    localStorage.setItem('token', response.data.data.token);
-  }
+  // Note: Local storage setting will be handled in AuthContext to support Remember Me
   return response.data;
 };
 
@@ -25,9 +23,21 @@ const getCurrentUser = async () => {
   return response.data;
 };
 
+const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgotpassword', { email });
+  return response.data;
+};
+
+const resetPassword = async (token, password) => {
+  const response = await api.put(`/auth/resetpassword/${token}`, { password });
+  return response.data;
+};
+
 export const authService = {
   register,
   login,
   logout,
   getCurrentUser,
+  forgotPassword,
+  resetPassword,
 };

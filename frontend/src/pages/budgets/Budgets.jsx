@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Wallet, 
@@ -19,8 +20,12 @@ import { apiService } from '../../services/api';
 import AddBudgetModal from '../../components/common/AddBudgetModal';
 import toast from 'react-hot-toast';
 import { getCategoryConfig } from '../../constants/categories';
+import { useData } from '../../context/DataContext';
 
 const Budgets = () => {
+  const navigate = useNavigate();
+  const { refreshTrigger } = useData();
+  
   const [loading, setLoading] = useState(true);
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -35,7 +40,7 @@ const Budgets = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentMonth]);
+  }, [currentMonth, refreshTrigger]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -85,6 +90,21 @@ const Budgets = () => {
   const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0);
   const overallRemaining = totalBudget - totalSpent;
   const overallPercentage = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+  
+  const hasToasted80 = useRef(false);
+  const hasToasted100 = useRef(false);
+
+  useEffect(() => {
+    if (totalBudget > 0 && !loading) {
+      if (totalSpent >= totalBudget && !hasToasted100.current) {
+        toast.error('🚨 Monthly budget exceeded.', { duration: 5000, style: { background: '#FEF2F2', color: '#991B1B' } });
+        hasToasted100.current = true;
+      } else if (totalSpent >= totalBudget * 0.8 && totalSpent < totalBudget && !hasToasted80.current) {
+        toast('⚠ You have used 80% of your monthly budget.', { icon: '⚠', duration: 5000, style: { background: '#FFF7ED', color: '#C2410C' } });
+        hasToasted80.current = true;
+      }
+    }
+  }, [totalSpent, totalBudget, loading]);
   
   let overallHealth = 'On Track';
   let overallHealthColor = 'text-green-600 dark:text-[#10B981]';
@@ -181,12 +201,19 @@ const Budgets = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="h-11 px-4 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm transition-colors cursor-pointer">
-             <CalendarIcon className="w-4 h-4 text-gray-400" />
-             {startDay} – {endDay}
-             <ChevronDown className="w-4 h-4 text-gray-400 ml-2" />
+          <div className="relative">
+             <input
+               type="month"
+               value={currentMonth}
+               onChange={(e) => setCurrentMonth(e.target.value)}
+               className="h-11 px-4 pl-10 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-[#144933]/20 dark:focus:ring-[#10B981]/20 focus:border-[#144933] dark:focus:border-[#10B981]"
+             />
+             <CalendarIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-          <button className="h-11 px-4 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-[#334155]/50">
+          <button 
+            onClick={() => navigate('/reports')}
+            className="h-11 px-4 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-[#334155] rounded-xl flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:bg-gray-50 dark:hover:bg-[#334155]/50 hover:scale-105 transform cursor-pointer"
+          >
              <FileText className="w-4 h-4 text-[#144933] dark:text-[#10B981]" />
              View Reports
           </button>
@@ -360,115 +387,54 @@ const Budgets = () => {
         {/* Right Column (Alerts + Recommendations) */}
         <div className="w-[320px] flex flex-col gap-6 shrink-0">
           
-          {/* Budget Alerts */}
-          <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-5 border border-gray-100 dark:border-[#334155] shadow-sm transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Budget Alerts</h3>
-              <span className="text-[12px] font-medium text-[#144933] dark:text-[#10B981] cursor-pointer hover:underline">View All</span>
-            </div>
-            
-            <div className="space-y-4">
-              {alerts.length === 0 ? (
-                <p className="text-[13px] text-gray-500">No alerts at this time.</p>
-              ) : (
-                alerts.map((alert, i) => {
-                  const isPositive = alert.type === 'positive';
-                  const isExceeded = alert.status === 'Exceeded';
-                  
-                  let bg = 'bg-orange-50 dark:bg-orange-900/10';
-                  let iconBg = 'bg-orange-100 dark:bg-orange-900/30';
-                  let iconColor = 'text-orange-600 dark:text-orange-400';
-                  let Icon = AlertCircle;
-                  let title = `${alert.category} budget is almost used up`;
-                  let msg = `You have ₹${alert.remaining} left`;
 
-                  if (isExceeded) {
-                    bg = 'bg-red-50 dark:bg-red-900/10';
-                    iconBg = 'bg-red-100 dark:bg-red-900/30';
-                    iconColor = 'text-red-600 dark:text-red-400';
-                    Icon = AlertTriangle;
-                    title = `${alert.category} budget exceeded`;
-                    msg = `You've spent ₹${Math.abs(alert.remaining)} more`;
-                  } else if (isPositive) {
-                    bg = 'bg-green-50 dark:bg-[#10B981]/5';
-                    iconBg = 'bg-green-100 dark:bg-[#10B981]/20';
-                    iconColor = 'text-green-600 dark:text-[#10B981]';
-                    Icon = CheckCircle2;
-                    title = alert.title;
-                    msg = alert.message;
-                  }
-
-                  return (
-                    <div key={i} className={`p-3 rounded-xl border border-transparent ${isExceeded ? 'dark:border-red-900/30' : (isPositive ? 'dark:border-[#10B981]/20' : 'dark:border-orange-900/30')} ${bg} flex gap-3 group cursor-pointer transition-colors`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-                        <Icon className={`w-4 h-4 ${iconColor}`} />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">{title}</h4>
-                        <p className="text-[11px] text-gray-600 dark:text-gray-400">{msg}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
 
           {/* Smart Recommendations */}
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-5 border border-gray-100 dark:border-[#334155] shadow-sm transition-colors">
             <h3 className="text-[15px] font-bold text-gray-900 dark:text-white mb-4">Smart Recommendations</h3>
             
             <div className="space-y-4">
-               {/* Hardcoded recommendations for exact design match */}
-               <div className="flex gap-3 group cursor-pointer border-b border-gray-50 dark:border-[#334155]/50 pb-4 last:border-0 last:pb-0">
+               {/* Static Recommendations */}
+               <div className="flex gap-3 border-b border-gray-50 dark:border-[#334155]/50 pb-4 last:border-0 last:pb-0">
                   <div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">Reduce dining out by ₹500</h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">You can save ₹500 this month!</p>
+                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">Reduce dining expenses by ₹500</h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">to stay on track this month.</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
                </div>
 
-               <div className="flex gap-3 group cursor-pointer border-b border-gray-50 dark:border-[#334155]/50 pb-4 last:border-0 last:pb-0">
+               <div className="flex gap-3 border-b border-gray-50 dark:border-[#334155]/50 pb-4 last:border-0 last:pb-0">
                   <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center shrink-0 text-orange-600 dark:text-orange-400">
                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">You can save more on shopping</h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">Try setting a lower limit next month.</p>
+                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">Travel spending is within budget</h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">You are managing transportation well.</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
                </div>
 
-               <div className="flex gap-3 group cursor-pointer">
+               <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-[#10B981]/10 flex items-center justify-center shrink-0 text-green-600 dark:text-[#10B981]">
                      <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="flex-1 pt-0.5">
-                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">Great job!</h4>
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">You've kept your travel spending low.</p>
+                    <h4 className="text-[13px] font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">You can save ₹2000 this month</h4>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400">Keep up the great work!</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
                </div>
             </div>
           </div>
 
           {/* Savings Impact Banner */}
           <div className="bg-[#EEF5ED] dark:bg-[#10B981]/10 rounded-2xl p-5 border border-transparent dark:border-[#10B981]/20 relative overflow-hidden transition-colors mt-auto">
-             <div className="relative z-10 w-[65%]">
-               <h4 className="text-[12px] font-semibold text-[#144933] dark:text-[#10B981] mb-2">Savings Impact</h4>
-               <p className="text-[10px] text-[#2D4A3E] dark:text-gray-300 leading-tight mb-3">If you reduce your spending in <strong>Shopping</strong> and <strong>Entertainment</strong> by 10%, you can save</p>
-               <h3 className="text-xl font-bold text-[#144933] dark:text-white mb-1">₹1,250</h3>
-               <p className="text-[9px] text-[#2D4A3E] dark:text-gray-400 mb-3">this month!</p>
-               <button className="bg-[#144933] dark:bg-[#10B981] text-white text-[10px] font-medium px-4 py-1.5 rounded-full hover:opacity-90 transition-opacity">
-                 See How to Save
-               </button>
-             </div>
-             <div className="absolute right-0 bottom-0 text-[60px] leading-none translate-x-2 translate-y-2 opacity-90 filter drop-shadow-md">
-               🐷
+             <div className="relative z-10 text-center w-full">
+               <div className="w-10 h-10 bg-green-100 dark:bg-[#10B981]/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Sparkles className="w-5 h-5 text-[#144933] dark:text-[#10B981]" />
+               </div>
+               <h4 className="text-[13px] font-bold text-[#144933] dark:text-white mb-2 leading-tight">Reducing food expenses by 10%<br />could save you ₹1200/month.</h4>
+               <p className="text-[11px] text-[#2D4A3E] dark:text-gray-400">Small changes make a big impact.</p>
              </div>
           </div>
 

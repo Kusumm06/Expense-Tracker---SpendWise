@@ -4,10 +4,12 @@ const DataContext = createContext(null);
 
 export const DataProvider = ({ children }) => {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const toggleExpenseModal = () => setIsExpenseModalOpen(prev => !prev);
+  const toggleIncomeModal = () => setIsIncomeModalOpen(prev => !prev);
   const toggleGoalModal = () => setIsGoalModalOpen(prev => !prev);
   
   // Call this function when a new item is created so dependents can refetch
@@ -17,6 +19,9 @@ export const DataProvider = ({ children }) => {
     isExpenseModalOpen,
     toggleExpenseModal,
     setIsExpenseModalOpen,
+    isIncomeModalOpen,
+    toggleIncomeModal,
+    setIsIncomeModalOpen,
     isGoalModalOpen,
     toggleGoalModal,
     setIsGoalModalOpen,

@@ -45,6 +45,14 @@ export const apiService = {
   getTrends: () => api.get('/analytics/trends'),
   getTopCategories: () => api.get('/analytics/top-categories'),
   getAdvancedAnalytics: () => api.get('/analytics/advanced'),
+
+  // Notifications
+  getNotifications: () => api.get('/notifications'),
+  markNotificationAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllNotificationsAsRead: () => api.put('/notifications/read-all'),
+
+  // Reports
+  getReports: (period) => api.get(period ? `/reports?period=${period}` : '/reports'),
 };
 
 export default api;

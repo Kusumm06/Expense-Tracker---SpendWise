@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -29,13 +30,15 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
     totalBalance: { amount: 0, trend: '0%' },
-    monthlySpend: { amount: 0, trend: '0%' },
+    totalIncome: { amount: 0, trend: '0%' },
+    totalExpenses: { amount: 0, trend: '0%' },
     savingsLeft: { amount: 0, trend: '0%' },
     monthlyBudget: { amount: 0, spent: 0 }
   });
   const [trends, setTrends] = useState([]);
   const [categoryStats, setCategoryStats] = useState([]);
   const [goals, setGoals] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -100,35 +103,38 @@ const Dashboard = () => {
         {/* ROW 1: Summary Cards */}
         <div className="grid grid-cols-4 gap-6 shrink-0">
           
-          {/* Total Balance */}
+          {/* Total Income */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden group transition-colors"
+            className={`rounded-[20px] p-5 shadow-sm relative overflow-hidden group transition-colors border bg-white dark:bg-[#1E293B] border-[#F0F0F0] dark:border-[#334155]`}
           >
             <div className="flex items-start gap-4 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#EEF5ED] dark:bg-[#10B981]/10 flex items-center justify-center transition-colors">
-                <Wallet className="w-5 h-5 text-[#22C55E] dark:text-[#10B981]" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors bg-[#EEF5ED] dark:bg-[#10B981]/10`}>
+                <Wallet className={`w-5 h-5 text-[#22C55E] dark:text-[#10B981]`} />
               </div>
               <div className="pt-1">
-                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Total Balance</p>
-                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.totalBalance.amount)}</h3>
+                <p className={`text-[13px] font-medium transition-colors text-gray-500 dark:text-[#94A3B8]`}>
+                  Total Income
+                </p>
+                <h3 className={`text-[22px] font-bold mt-0.5 transition-colors text-[#1F2937] dark:text-white`}>
+                  {formatCurrency(summary.totalIncome.amount)}
+                </h3>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
+            <div className={`flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]`}>
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{summary.totalBalance.trend} vs last month</span>
+              <span>{summary.totalIncome.trend} vs last month</span>
             </div>
-            {/* Simple decorative chart line */}
             <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
-              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-[#22C55E] fill-transparent stroke-2">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={`w-full h-full fill-transparent stroke-2 stroke-[#22C55E]`}>
                 <path d="M0 30 Q 20 10, 40 20 T 80 10 T 100 20" />
               </svg>
             </div>
           </motion.div>
 
-          {/* Monthly Spend */}
+          {/* Total Expenses */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -136,20 +142,20 @@ const Dashboard = () => {
             className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden transition-colors"
           >
             <div className="flex items-start gap-4 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center transition-colors">
-                <Download className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center transition-colors">
+                <Download className="w-5 h-5 text-orange-500 dark:text-orange-400" />
               </div>
               <div className="pt-1">
-                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Monthly Spend</p>
-                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.monthlySpend.amount)}</h3>
+                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Total Expenses</p>
+                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.totalExpenses.amount)}</h3>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
+            <div className="flex items-center gap-1.5 text-[12px] font-medium text-orange-500">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{summary.monthlySpend.trend} vs last month</span>
+              <span>{summary.totalExpenses.trend} vs last month</span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
-              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-blue-500 fill-transparent stroke-2">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-orange-500 fill-transparent stroke-2">
                 <path d="M0 20 Q 20 30, 40 10 T 80 20 T 100 10" />
               </svg>
             </div>
@@ -160,23 +166,27 @@ const Dashboard = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden transition-colors"
+            className={`rounded-[20px] p-5 shadow-sm relative overflow-hidden transition-colors border ${summary.savingsLeft.amount < 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30' : 'bg-white dark:bg-[#1E293B] border-[#F0F0F0] dark:border-[#334155]'}`}
           >
             <div className="flex items-start gap-4 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center transition-colors">
-                <PiggyBank className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${summary.savingsLeft.amount < 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-orange-50 dark:bg-orange-500/10'}`}>
+                <PiggyBank className={`w-5 h-5 ${summary.savingsLeft.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'}`} />
               </div>
               <div className="pt-1">
-                <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Savings Left</p>
-                <h3 className="text-[22px] font-bold text-[#1F2937] dark:text-white mt-0.5 transition-colors">{formatCurrency(summary.savingsLeft.amount)}</h3>
+                <p className={`text-[13px] font-medium transition-colors ${summary.savingsLeft.amount < 0 ? 'text-red-600/70 dark:text-red-400/70' : 'text-gray-500 dark:text-[#94A3B8]'}`}>
+                  {summary.savingsLeft.amount < 0 ? 'Overspent By' : 'Savings Left'}
+                </p>
+                <h3 className={`text-[22px] font-bold mt-0.5 transition-colors ${summary.savingsLeft.amount < 0 ? 'text-red-700 dark:text-red-300' : 'text-[#1F2937] dark:text-white'}`}>
+                  {formatCurrency(Math.abs(summary.savingsLeft.amount))}
+                </h3>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#22C55E]">
-              <ArrowUpRight className="w-3.5 h-3.5" />
+            <div className={`flex items-center gap-1.5 text-[12px] font-medium ${summary.savingsLeft.amount < 0 ? 'text-red-500' : 'text-[#22C55E]'}`}>
+              {summary.savingsLeft.trend.startsWith('-') ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
               <span>{summary.savingsLeft.trend} vs last month</span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-12 opacity-30">
-              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full stroke-orange-500 fill-transparent stroke-2">
+              <svg viewBox="0 0 100 30" preserveAspectRatio="none" className={`w-full h-full fill-transparent stroke-2 ${summary.savingsLeft.amount < 0 ? 'stroke-red-500' : 'stroke-orange-500'}`}>
                 <path d="M0 25 Q 30 10, 50 20 T 100 5" />
               </svg>
             </div>
@@ -187,22 +197,22 @@ const Dashboard = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative overflow-hidden flex flex-col justify-between transition-colors"
+            className="bg-white dark:bg-[#1E293B] rounded-[20px] p-5 border border-[#F0F0F0] dark:border-[#334155] shadow-sm relative flex items-center transition-colors overflow-hidden justify-between"
           >
-            <div className="flex justify-between items-start">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center transition-colors">
+            {/* Left Info */}
+            <div className="flex flex-col h-full justify-between z-10 w-[45%]">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center shrink-0 transition-colors">
                   <PieChartIcon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                 </div>
                 <div className="pt-1">
-                  <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors">Monthly Budget</p>
-                  <p className="text-[12px] font-medium text-gray-400 dark:text-[#64748B] mt-1 transition-colors">{formatCurrency(summary.monthlyBudget.spent)} of {formatCurrency(summary.monthlyBudget.amount)}</p>
+                  <p className="text-[13px] font-medium text-gray-500 dark:text-[#94A3B8] transition-colors leading-tight">Monthly Budget</p>
                 </div>
               </div>
             </div>
             
-            {/* Circular Progress */}
-            <div className="absolute right-4 bottom-4 w-16 h-16">
+            {/* Circular Progress Centered Overlap Fix */}
+            <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-[160px] h-[160px] pointer-events-none opacity-80">
                <svg viewBox="0 0 36 36" className="w-full h-full">
                   <path
                     className="text-gray-100 dark:text-gray-700 transition-colors"
@@ -220,11 +230,16 @@ const Dashboard = () => {
                     strokeWidth="3.5"
                     strokeLinecap="round"
                   />
-                  <text x="18" y="20.35" className="text-[10px] font-bold fill-purple-600 dark:fill-purple-400 transition-colors" textAnchor="middle">{budgetPercentage}%</text>
                 </svg>
+                {/* Center text inside ring */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-[14px] font-bold text-purple-600 dark:text-purple-400">{budgetPercentage}%</span>
+                  <span className="text-[8px] font-semibold text-gray-500 mt-0.5 px-2 text-center leading-tight">
+                    {formatCurrency(summary.monthlyBudget.spent)} <br/> / <br/> {formatCurrency(summary.monthlyBudget.amount)}
+                  </span>
+                </div>
             </div>
           </motion.div>
-
         </div>
 
         {/* ROW 2: Charts */}
@@ -249,9 +264,13 @@ const Dashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#22C55E" stopOpacity={0.2}/>
                         <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <XAxis 
@@ -268,15 +287,24 @@ const Dashboard = () => {
                       tick={{ fontSize: 12, fill: '#9CA3AF' }} 
                       tickFormatter={(value) => `₹${value/1000}k`} 
                     />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#22C55E', strokeWidth: 1, strokeDasharray: '5 5' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '5 5' }} />
                     <Area 
                       type="monotone" 
-                      dataKey="amount" 
+                      dataKey="income" 
                       stroke="#22C55E" 
                       strokeWidth={3} 
                       fillOpacity={1} 
-                      fill="url(#colorAmount)"
+                      fill="url(#colorIncome)"
                       activeDot={{ r: 6, fill: '#fff', stroke: '#22C55E', strokeWidth: 2 }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="expense" 
+                      stroke="#F59E0B" 
+                      strokeWidth={3} 
+                      fillOpacity={1} 
+                      fill="url(#colorExpense)"
+                      activeDot={{ r: 6, fill: '#fff', stroke: '#F59E0B', strokeWidth: 2 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -327,7 +355,7 @@ const Dashboard = () => {
                 )}
                 {/* Center text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[16px] font-bold text-[#1F2937] dark:text-white transition-colors">{formatCurrency(summary.monthlySpend.amount)}</span>
+                  <span className="text-[16px] font-bold text-[#1F2937] dark:text-white transition-colors">{formatCurrency(summary.totalExpenses.amount)}</span>
                   <span className="text-[11px] text-gray-500 dark:text-[#94A3B8] font-medium transition-colors">Total Spend</span>
                 </div>
               </div>
@@ -360,7 +388,10 @@ const Dashboard = () => {
         >
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-semibold text-[16px] text-[#1F2937] dark:text-white transition-colors">Savings Goals</h3>
-            <button className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center gap-1 hover:underline transition-colors">
+            <button 
+              onClick={() => navigate('/goals')}
+              className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center gap-1 hover:underline hover:scale-105 transform transition-all cursor-pointer"
+            >
               View All Goals <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -448,9 +479,13 @@ const Dashboard = () => {
             </p>
           </div>
 
-          <button className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center gap-1 mt-2 hover:underline transition-colors">
+          <motion.button 
+            whileHover={{ y: -2 }}
+            onClick={() => navigate('/analytics')}
+            className="text-[13px] font-medium text-[#144933] dark:text-[#10B981] flex items-center justify-center gap-1 mt-2 hover:underline transition-all py-2 rounded-xl hover:bg-[#EEF5ED] dark:hover:bg-[#10B981]/10 w-full"
+          >
             View all insights <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Promo / Banner Card */}

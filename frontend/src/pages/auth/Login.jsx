@@ -1,16 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Mail, Lock, User, EyeOff, Eye, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, EyeOff, Eye, ArrowRight, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  
+  // Forgot Password Modal State
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const { login, forgotPassword } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,7 +35,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await login(formData);
+      const res = await login(formData, rememberMe);
       if (res && res.success) {
         toast.success('Logged in successfully!');
         navigate('/dashboard');
@@ -31,6 +46,27 @@ const Login = () => {
       toast.error(err.response?.data?.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) return toast.error('Please enter your email');
+    
+    setForgotLoading(true);
+    try {
+      const res = await forgotPassword(forgotEmail);
+      if (res && res.success) {
+        toast.success('Reset link sent successfully!');
+        setShowForgotModal(false);
+        setForgotEmail('');
+      } else {
+        toast.error(res?.message || 'Failed to send reset link');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'An error occurred. Please try again.');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -98,21 +134,37 @@ const Login = () => {
         </div>
 
         {/* Remember me & Forgot Password */}
-        <div className="flex justify-between items-center mt-1 mb-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="w-[16px] h-[16px] rounded-[4px] border-[#E2E8F0] text-[#184734] focus:ring-[#184734]" />
-            <span className="text-[13px] font-medium text-[#4B5563]">Remember me</span>
+        <div className="flex justify-between items-center mt-2 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <div className={`w-[18px] h-[18px] rounded-[6px] border flex items-center justify-center transition-colors ${rememberMe ? 'bg-[#184734] border-[#184734] shadow-[0_0_10px_rgba(24,71,52,0.3)]' : 'border-[#E2E8F0] group-hover:border-[#184734]'}`}>
+              {rememberMe && (
+                <svg className="w-[12px] h-[12px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <input 
+              type="checkbox" 
+              className="hidden" 
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span className="text-[14px] font-medium text-[#4B5563] group-hover:text-[#184734] transition-colors">Remember me</span>
           </label>
-          <a href="#" className="text-[13px] font-semibold text-[#184734] hover:underline">
+          <button 
+            type="button"
+            onClick={() => setShowForgotModal(true)}
+            className="text-[14px] font-semibold text-[#184734] hover:underline transition-all"
+          >
             Forgot password?
-          </a>
+          </button>
         </div>
 
         {/* Login Button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-[56px] rounded-[12px] font-medium text-[16px] text-white flex items-center justify-center gap-2 transition-all hover:bg-[#123826] bg-[#184734]"
+          className="w-full h-[56px] rounded-[12px] font-medium text-[16px] text-white flex items-center justify-center gap-2 transition-all hover:bg-[#123826] bg-[#184734] shadow-[0_4px_14px_rgba(24,71,52,0.2)] hover:shadow-[0_6px_20px_rgba(24,71,52,0.3)]"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
@@ -124,42 +176,83 @@ const Login = () => {
           )}
         </button>
       </form>
-      
-      {/* Divider */}
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
-        <span className="text-[13px] text-[#A0ABA4] font-medium">or continue with</span>
-        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
-      </div>
-
-      {/* Social Login */}
-      <div className="flex justify-between gap-3">
-        {['Google', 'Apple', 'Microsoft'].map((provider) => {
-          let iconUrl = '';
-          if (provider === 'Google') iconUrl = 'https://www.svgrepo.com/show/475656/google-color.svg';
-          if (provider === 'Apple') iconUrl = 'https://www.svgrepo.com/show/511330/apple-173.svg';
-          if (provider === 'Microsoft') iconUrl = 'https://www.svgrepo.com/show/475666/microsoft-color.svg';
-
-          return (
-            <button 
-              key={provider}
-              className="flex-1 h-[48px] bg-white border border-[#E2E8F0] rounded-[12px] flex items-center justify-center gap-2 hover:bg-[#F8FAFC] transition-colors"
-            >
-              <img src={iconUrl} alt={provider} className="w-[18px] h-[18px]" />
-              <span className="text-[14px] font-medium text-[#4B5563]">{provider}</span>
-            </button>
-          )
-        })}
-      </div>
 
       <div className="mt-8 text-center">
-        <p className="text-[14px] text-[#6F786F]">
+        <p className="text-[15px] text-[#6F786F]">
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#184734] font-semibold hover:underline decoration-2 underline-offset-4">
+          <Link to="/register" className="text-[#184734] font-semibold hover:underline decoration-2 underline-offset-4 transition-all">
             Create one
           </Link>
         </p>
       </div>
+
+      {/* Forgot Password Modal */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#17392B]/40 backdrop-blur-sm"
+              onClick={() => setShowForgotModal(false)}
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-[420px] bg-white rounded-[24px] p-8 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.1)]"
+            >
+              <button 
+                onClick={() => setShowForgotModal(false)}
+                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+              </button>
+
+              <div className="w-[56px] h-[56px] bg-[#EEF5EA] rounded-[16px] flex items-center justify-center mb-6">
+                <Lock className="w-[28px] h-[28px] text-[#184734]" strokeWidth={1.5} />
+              </div>
+
+              <h3 className="font-playfair text-[28px] font-semibold text-[#17392B] leading-tight mb-2">
+                Reset Password
+              </h3>
+              <p className="text-[15px] text-[#6F786F] mb-6">
+                Enter your email to receive a password reset link.
+              </p>
+
+              <form onSubmit={handleForgotSubmit} className="flex flex-col gap-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-[16px] flex items-center pointer-events-none">
+                    <Mail className="w-[18px] h-[18px] text-[#A0ABA4]" strokeWidth={1.5} />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Email address"
+                    className="w-full h-[52px] rounded-[12px] bg-white pl-[46px] pr-4 text-[15px] text-[#17392B] placeholder:text-[#A0ABA4] border border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-1 focus:ring-[#8DA57B] outline-none transition-all"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full h-[52px] rounded-[12px] font-medium text-[15px] text-white flex items-center justify-center transition-all hover:bg-[#123826] bg-[#184734] mt-2"
+                >
+                  {forgotLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

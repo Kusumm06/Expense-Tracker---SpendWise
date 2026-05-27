@@ -49,7 +49,11 @@ const EditGoalModal = ({ isOpen, onClose, goal, onSuccess }) => {
       
       const res = await apiService.updateGoal(goal._id, payload);
       if (res.data.success) {
-        toast.success('Goal updated successfully');
+        if (res.data.newlyCompleted) {
+          toast.success(`🎉 Congratulations! You completed your ${payload.title} Goal!`, { duration: 5000 });
+        } else {
+          toast.success('Goal updated successfully');
+        }
         onSuccess();
         onClose();
       }

@@ -71,8 +71,7 @@ export const getSummary = async (req, res) => {
     const budgets = await Budget.find({ user: userId, month: currentMonthStr });
     const totalBudget = budgets.reduce((acc, b) => acc + b.limitAmount, 0) || 0; // Default if no budgets
     
-    // Savings left (Budget - Spend) or just (Income - Spend)
-    // The design shows "Savings Left" with an amount. We'll use Income - Spend for the month.
+    // Savings left (Income - Spend)
     const currentSavings = currentIncome - currentExpense;
     const prevSavings = prevIncome - prevExpense;
     const savingsChange = calculatePercentageChange(currentSavings, prevSavings);
@@ -80,11 +79,15 @@ export const getSummary = async (req, res) => {
     // If totalBudget is 0, let's provide a mock one for the UI to look good if no budgets exist
     const finalTotalBudget = totalBudget > 0 ? totalBudget : (currentExpense > 0 ? currentExpense * 1.5 : 20000);
 
+    // Trend for income
+    const incomeChange = calculatePercentageChange(currentIncome, prevIncome);
+
     res.status(200).json({
       success: true,
       data: {
         totalBalance: { amount: totalBalance, trend: balanceChange },
-        monthlySpend: { amount: currentExpense, trend: spendChange },
+        totalIncome: { amount: currentIncome, trend: incomeChange },
+        totalExpenses: { amount: currentExpense, trend: spendChange },
         savingsLeft: { amount: currentSavings, trend: savingsChange },
         monthlyBudget: { amount: finalTotalBudget, spent: currentExpense }
       },

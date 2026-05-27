@@ -138,7 +138,7 @@ const Register = () => {
             name="password"
             required
             placeholder="Create password"
-            className="w-full h-[52px] rounded-[10px] bg-white pl-[42px] pr-[42px] text-[14px] text-[#17392B] placeholder:text-[#A0ABA4] border border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-1 focus:ring-[#8DA57B] outline-none transition-all"
+            className={`w-full h-[52px] rounded-[10px] bg-white pl-[42px] pr-[42px] text-[14px] text-[#17392B] placeholder:text-[#A0ABA4] border ${formData.password && formData.password.length < 6 ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-[#8DA57B]'} focus:ring-1 outline-none transition-all`}
             value={formData.password}
             onChange={handleChange}
           />
@@ -161,7 +161,7 @@ const Register = () => {
             name="confirmPassword"
             required
             placeholder="Confirm password"
-            className="w-full h-[52px] rounded-[10px] bg-white pl-[42px] pr-[42px] text-[14px] text-[#17392B] placeholder:text-[#A0ABA4] border border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-1 focus:ring-[#8DA57B] outline-none transition-all"
+            className={`w-full h-[52px] rounded-[10px] bg-white pl-[42px] pr-[42px] text-[14px] text-[#17392B] placeholder:text-[#A0ABA4] border ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-[#E2E8F0] focus:border-[#8DA57B] focus:ring-[#8DA57B]'} focus:ring-1 outline-none transition-all`}
             value={formData.confirmPassword}
             onChange={handleChange}
           />
@@ -187,7 +187,7 @@ const Register = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-[54px] rounded-[12px] font-medium text-[15px] text-white mt-1 flex items-center justify-center gap-2 transition-all hover:bg-[#123826] bg-[#184734]"
+          className="w-full h-[56px] rounded-[12px] font-medium text-[16px] text-white mt-4 flex items-center justify-center gap-2 transition-all hover:bg-[#123826] bg-[#184734] shadow-[0_4px_14px_rgba(24,71,52,0.2)] hover:shadow-[0_6px_20px_rgba(24,71,52,0.3)]"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
@@ -200,37 +200,10 @@ const Register = () => {
         </button>
       </form>
       
-      {/* Divider */}
-      <div className="flex items-center gap-4 my-5">
-        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
-        <span className="text-[12px] text-[#A0ABA4] font-medium">or continue with</span>
-        <div className="flex-1 h-[1px] bg-[#E2E8F0]"></div>
-      </div>
-
-      {/* Social Login */}
-      <div className="flex justify-between gap-3">
-        {['Google', 'Apple', 'Microsoft'].map((provider) => {
-          let iconUrl = '';
-          if (provider === 'Google') iconUrl = 'https://www.svgrepo.com/show/475656/google-color.svg';
-          if (provider === 'Apple') iconUrl = 'https://www.svgrepo.com/show/511330/apple-173.svg';
-          if (provider === 'Microsoft') iconUrl = 'https://www.svgrepo.com/show/475666/microsoft-color.svg';
-
-          return (
-            <button 
-              key={provider}
-              className="flex-1 h-[44px] bg-white border border-[#E2E8F0] rounded-[10px] flex items-center justify-center gap-2 hover:bg-[#F8FAFC] transition-colors"
-            >
-              <img src={iconUrl} alt={provider} className="w-[16px] h-[16px]" />
-              <span className="text-[13px] font-medium text-[#4B5563]">{provider}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="mt-6 text-center">
-        <p className="text-[13px] text-[#6F786F]">
+      <div className="mt-8 text-center">
+        <p className="text-[14px] text-[#6F786F]">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#184734] font-semibold hover:underline decoration-2 underline-offset-4">
+          <Link to="/login" className="text-[#184734] font-semibold hover:underline decoration-2 underline-offset-4 transition-all">
             Log in
           </Link>
         </p>

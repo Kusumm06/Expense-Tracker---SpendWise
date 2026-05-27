@@ -6,6 +6,7 @@ import ProtectedRoute from './ProtectedRoute';
 // Pages
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+import ResetPassword from '../pages/auth/ResetPassword';
 import Dashboard from '../pages/dashboard/Dashboard';
 import Expenses from '../pages/expenses/Expenses';
 import AddExpense from '../pages/expenses/AddExpense';
@@ -22,6 +23,7 @@ const AppRoutes = () => {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>
